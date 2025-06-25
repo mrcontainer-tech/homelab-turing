@@ -14,7 +14,7 @@ spec:
         # look under each component for both chart/ and manifest/ subfolders
         directories:
           - path: core-components/*/chart
-          - path: core-components/*/manifest
+          - path: core-components/*/manifests
 
   template:
     metadata:
