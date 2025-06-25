@@ -109,8 +109,8 @@ ArgoCD will recursively apply all `Application` manifests in `core-components/` 
 ```
 .
 ├── core-components/
-│   ├── metallb/      # ArgoCD Application + Helm values
-│   └── longhorn/     # ArgoCD Application + storage config
+│   ├── metallb/      # Helm chart + Helm values
+│   └── longhorn/     # Helm chart + storage config
 │
 └── applications/
     ├── homeassistant/

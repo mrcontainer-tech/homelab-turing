@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-components
+  namespace: argocd
+spec:
+  # Git directories generator: picks up every chart & manifest dir
+  generators:
+    - git:
+        repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
+        revision: main
+        # look under each component for both chart/ and manifest/ subfolders
+        directories:
+          - path: core-components/*/chart
+          - path: core-components/*/manifest
+
+  template:
+    metadata:
+      # .path is e.g. "core-components/metallb/chart"; dirname+.basename → "metallb-chart"
+      name: '{{ base (dirname .path) }}-{{ base .path }}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
+        targetRevision: main
+        # point at the exact subfolder (chart or manifest)
+        path: '{{ .path }}'
+      destination:
+        server: https://kubernetes.default.svc
+        # install into a namespace matching the component name, e.g. "metallb"
+        namespace: '{{ base (dirname .path) }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+

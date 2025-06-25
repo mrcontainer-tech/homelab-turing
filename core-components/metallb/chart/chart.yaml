@@ -1,0 +1,13 @@
+apiVersion: v2                          # Helm 3 chart format
+name: metallb                          # chart name
+description: >-                        # brief summary
+  A network load-balancer implementation for Kubernetes
+  using standard routing protocols
+type: application                      # this chart deploys an “application”
+version: 0.15.2                        # chart version (bump this on any chart change)
+appVersion: "v0.15.2"                  # MetalLB release this chart deploys
+home: https://metallb.universe.tf      # project homepage
+icon: https://raw.githubusercontent.com/metallb/metallb/main/logo/logo.svg
+sources:
+  - https://github.com/metallb/metallb  # upstream source repo
+kubeVersion: ">= 1.19.0-0"             # minimum supported Kubernetes version
