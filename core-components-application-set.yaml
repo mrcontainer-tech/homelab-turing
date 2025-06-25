@@ -5,6 +5,8 @@ metadata:
   namespace: argocd
 spec:
   # Git directories generator: picks up every chart & manifest dir
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
   generators:
     - git:
         repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
@@ -17,18 +19,18 @@ spec:
   template:
     metadata:
       # .path is e.g. "core-components/metallb/chart"; dirname+.basename → "metallb-chart"
-      name: '{{ base (dirname .path) }}-{{ base .path }}'
+      name: '{{ base (dir .path.path) }}-{{ base .path.path }}'
     spec:
       project: default
       source:
         repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
         targetRevision: main
         # point at the exact subfolder (chart or manifest)
-        path: '{{ .path }}'
+        path: '{{ .path.path }}'
       destination:
         server: https://kubernetes.default.svc
         # install into a namespace matching the component name, e.g. "metallb"
-        namespace: '{{ base (dirname .path) }}'
+        namespace: '{{ base (dir .path.path) }}'
       syncPolicy:
         automated:
           prune: true
