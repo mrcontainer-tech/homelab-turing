@@ -1,0 +1,4 @@
+# Add custom helm values here
+namespace: cert-manager
+crds:
+  enabled: true
