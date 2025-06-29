@@ -4,37 +4,31 @@ metadata:
   name: core-components
   namespace: argocd
 spec:
-  # Git directories generator: picks up every chart & manifest dir
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
     - git:
         repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
         revision: main
-        # look under each component for both chart/ and manifest/ subfolders
         directories:
           - path: core-components/*/chart
-          - path: core-components/*/manifests
 
   template:
     metadata:
-      # .path is e.g. "core-components/metallb/chart"; dirname+.basename → "metallb-chart"
+      # e.g. path="core-components/metallb/chart" → name="metallb-chart"
       name: '{{ base (dir .path.path) }}-{{ base .path.path }}'
     spec:
       project: default
       source:
         repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
         targetRevision: main
-        # point at the exact subfolder (chart or manifest)
         path: '{{ .path.path }}'
         helm:
-          # Override default values.yaml with custom values.yaml
+          # merge in ../values.yaml from each component folder
           valueFiles:
-            # This should expand to e.g "core-components/metallb/chart/values.yaml"
-            - '{{ printf "%s/values.yaml" (dir .path.path) }}'
+            - ../values.yaml
       destination:
         server: https://kubernetes.default.svc
-        # install into a namespace matching the component name, e.g. "metallb"
         namespace: '{{ base (dir .path.path) }}'
       syncPolicy:
         automated:
