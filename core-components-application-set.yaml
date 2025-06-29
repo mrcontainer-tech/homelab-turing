@@ -27,6 +27,11 @@ spec:
         targetRevision: main
         # point at the exact subfolder (chart or manifest)
         path: '{{ .path.path }}'
+        helm:
+          # Override default values.yaml with custom values.yaml
+          valueFiles:
+            # This should expand to e.g "core-components/metallb/chart/values.yaml"
+            - '{{ printf "%s/values.yaml" (dir .path.path) }}'
       destination:
         server: https://kubernetes.default.svc
         # install into a namespace matching the component name, e.g. "metallb"

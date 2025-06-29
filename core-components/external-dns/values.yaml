@@ -1,0 +1,23 @@
+# Override default values.yaml with custom values.yaml
+provider:
+  name: aws
+
+# Use the secret external-dns that is already created
+env:
+  - name: AWS_ACCESS_KEY_ID
+    valueFrom:
+      secretKeyRef:
+        name: external-dns
+        key: accessKeyId
+  - name: AWS_SECRET_ACCESS_KEY
+    valueFrom:
+      secretKeyRef:
+        name: external-dns
+        key: secretAccessKey
+  - name: AWS_DEFAULT_REGION
+    value: us-east-1
+        
+domainFilters:
+  - mrcontainer.nl
+
+  
