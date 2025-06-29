@@ -4,20 +4,23 @@ provider:
 
 # Use the secret external-dns that is already created
 env:
-  - name: AWS_ACCESS_KEY_ID
-    valueFrom:
-      secretKeyRef:
-        name: external-dns
-        key: accessKeyId
-  - name: AWS_SECRET_ACCESS_KEY
-    valueFrom:
-      secretKeyRef:
-        name: external-dns
-        key: secretAccessKey
+  - name: AWS_SHARED_CREDENTIALS_FILE
+    value: /etc/external-dns/aws-credentials
   - name: AWS_DEFAULT_REGION
     value: us-east-1
         
 domainFilters:
   - mrcontainer.nl
 
-  
+extraVolumes:
+  - name: aws-credentials
+    secret:
+      secretName: external-dns
+      items:
+        - key: credentials
+          path: aws-credentials
+          
+extraVolumeMounts:
+  - name: aws-credentials
+    mountPath: /etc/external-dns
+    readOnly: true
