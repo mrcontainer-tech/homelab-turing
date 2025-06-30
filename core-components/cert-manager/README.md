@@ -1,4 +1,4 @@
-# Manual steps for External DNS
+# Cert Manager
 
 To speed things along, I created an IAM user with least privilege permissions to create Route53 records. The secret itself I created using the AWS CLI and Kubectl. Further improvement to prevent this is to use something like Identity webhook or IAM Roles Anywhere.
 
@@ -21,7 +21,5 @@ aws_secret_access_key = YOUR_SECRET_ACCESS_KEY
 3. Create a Kubernetes secret with the AWS credentials file.
 
 ```
-kubectl create secret generic external-dns 
-  --namespace external-dns --from-file credentials-externaldns
+kubectl create secret generic certmanager --namespace cert-manager --from-file credentials-certmanager
 ```
-

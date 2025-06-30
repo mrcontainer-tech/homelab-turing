@@ -2,3 +2,19 @@
 namespace: cert-manager
 crds:
   enabled: true
+  
+extraEnv:
+  - name: AWS_SHARED_CREDENTIALS_FILE
+    value: /etc/cert-manager/aws-credentials
+    
+Volumes:
+  - name: aws-credentials
+    secret:
+      secretName: certmanager
+      items:
+        - key: credentials
+          path: aws-credentials
+
+VolumeMounts:
+  - name: aws-credentials
+    mountPath: /etc/cert-manager

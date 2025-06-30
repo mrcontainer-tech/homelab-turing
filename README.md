@@ -183,6 +183,14 @@ To add a new Helm chart to **core‑components** or **applications** and ensure 
 
 On the next Argo CD sync, the full chart directory is treated as plain YAML so every rendered manifest is applied exactly as you have in Git—letting you review diffs directly in Git and in Argo CD.
 
+## Expand on the following:
+
+- Cert Manager: How did I set it up
+- External DNS: How did I set it up and why
+- Create simple ADR records: Explain choices and why
+- Redo README: In my own words not AI slop
+- Opensource this Repository: Create blogpost about it
+
 ## Tips & Tricks
 
 * **Sync waves**: use `argocd.argoproj.io/sync-wave` annotations to enforce ordering (e.g. CRDs before charts).
