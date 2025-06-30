@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-components
+  name: applications
   namespace: argocd
 spec:
   goTemplate: true
@@ -11,13 +11,13 @@ spec:
         repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
         revision: main
         directories:
-          - path: core-components/*/chart
+          - path: applications/*/chart
+
   template:
     metadata:
       # e.g. path="core-components/metallb/chart" → name="metallb-chart"
       name: '{{ base (dir .path.path) }}-{{ base .path.path }}'
     spec:
-      # Using the default project for now
       project: default
       source:
         repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
@@ -34,4 +34,3 @@ spec:
         automated:
           prune: true
           selfHeal: true
-

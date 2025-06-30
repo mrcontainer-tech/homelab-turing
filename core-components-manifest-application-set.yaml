@@ -6,19 +6,18 @@ metadata:
 spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
-
   generators:
     - git:
         repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
         revision: main
         directories:
           - path: core-components/*/manifests
-
   template:
     metadata:
       # e.g. path="core-components/metallb/manifests" → name="metallb-manifest"
       name: '{{ base (dir .path.path) }}-manifest'
     spec:
+      # Using the default project for now
       project: default
       source:
         repoURL: https://github.com/mrcontainer-tech/homelab-turing.git

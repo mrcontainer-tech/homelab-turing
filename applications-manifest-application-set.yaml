@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-components
+  name: applications-manifests
   namespace: argocd
 spec:
   goTemplate: true
@@ -11,11 +11,11 @@ spec:
         repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
         revision: main
         directories:
-          - path: core-components/*/chart
+          - path: applications/*/manifests
   template:
     metadata:
-      # e.g. path="core-components/metallb/chart" → name="metallb-chart"
-      name: '{{ base (dir .path.path) }}-{{ base .path.path }}'
+      # e.g. path="applications/homepage/manifests" → name=homepage-manifest"
+      name: '{{ base (dir .path.path) }}-manifest'
     spec:
       # Using the default project for now
       project: default
@@ -23,10 +23,6 @@ spec:
         repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
         targetRevision: main
         path: '{{ .path.path }}'
-        helm:
-          # merge in ../values.yaml from each component folder
-          valueFiles:
-            - ../values.yaml
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{ base (dir .path.path) }}'
@@ -34,4 +30,3 @@ spec:
         automated:
           prune: true
           selfHeal: true
-
