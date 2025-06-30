@@ -7,7 +7,7 @@ extraEnv:
   - name: AWS_SHARED_CREDENTIALS_FILE
     value: /etc/cert-manager/aws-credentials
     
-Volumes:
+volumes:
   - name: aws-credentials
     secret:
       secretName: certmanager
@@ -15,6 +15,6 @@ Volumes:
         - key: credentials
           path: aws-credentials
 
-VolumeMounts:
+volumeMounts:
   - name: aws-credentials
     mountPath: /etc/cert-manager
