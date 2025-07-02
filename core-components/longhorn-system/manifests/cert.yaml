@@ -1,0 +1,15 @@
+# certificate-longhorn-backend.yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: longhorn
+  namespace: longhorn-system
+spec:
+  # where the TLS secret will go
+  secretName: longhorn-tls
+  # the DNS name you’ll use
+  dnsNames:
+    - longhorn.mrcontainer.nl
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
