@@ -36,6 +36,16 @@ data:
             - abbr: GH
               href: https://github.com/
   services.yaml: |
+    - Bookmarks:
+        - Github:
+          href: https://github.com/
+          icon: https://github.com/favicon.ico
+        - ChatGPT:
+          href: https://chat.openai.com/
+          icon: https://chat.openai.com/favicon.ico
+        - Tweakers:
+          href: https://tweakers.net/
+          icon: https://tweakers.net/favicon.ico
     - Infrastructure:
         - ArgoCD:
             href: https://argocd.mrcontainter.nl/
