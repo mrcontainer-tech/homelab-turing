@@ -17,3 +17,4 @@ spec:
       - dns01:
           route53:
             hostedZoneID: Z077931816VH0SRDNYVCT
+            region: eu-west-1
