@@ -191,8 +191,14 @@ On the next Argo CD sync, the full chart directory is treated as plain YAML so e
 - Redo README: In my own words not AI slop
 - Opensource this Repository: Create blogpost about it
 
-## Tips & Tricks
+## ArgoCD disabled internal TLS
 
-* **Sync waves**: use `argocd.argoproj.io/sync-wave` annotations to enforce ordering (e.g. CRDs before charts).
-* **Chart overrides**: add `helm.parameters` or `valueFiles` under the `source.helm:` block to customize installs.
-* **Drift detection**: use `argocd app diff <app-name>` to see live vs. desired state.
+Disabled the internal TLS by doing a really beautiful thing, namely a `kubectl patch`. 
+
+```
+kubectl -n argocd patch deployment argocd-server \                                                                                                                                  ─╯
+  --type='json' \
+  -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--insecure"}]'
+```
+
+Solution would to do a `Helm install` with a proper values.yaml, so it can be committed to Git. This feels a bit hacky at the moment and should be replaced with a proper helm install & values.yaml file.
