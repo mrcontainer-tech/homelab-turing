@@ -11,6 +11,7 @@ metadata:
     gethomepage.dev/group: Cluster Management
     gethomepage.dev/icon: homepage.png
     gethomepage.dev/name: Homepage
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   rules:
     - host: "homepage.mrcontainer.nl"

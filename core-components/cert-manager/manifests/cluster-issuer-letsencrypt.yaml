@@ -1,0 +1,19 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  namespace: cert-manager
+spec:
+  acme:
+    # Use the production Let's Encrypt endpoint
+    server: https://acme-v02.api.letsencrypt.org/directory
+    # Your email for urgent notices & lost key recovery
+    email: martijn.scholten@mrcontainer.nl
+    # Secret where cert-manager will store the ACME account private key
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+    # How to solve the certificate challenge
+    solvers:
+      - dns01:
+          route53:
+            hostedZoneID: Z077931816VH0SRDNYVCT
