@@ -12,7 +12,7 @@ volumes:
     secret:
       secretName: certmanager
       items:
-        - key: certmanager
+        - key: credentials-certmanager
           path: aws-credentials
 
 volumeMounts:
