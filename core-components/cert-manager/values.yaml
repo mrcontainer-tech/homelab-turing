@@ -3,6 +3,18 @@ namespace: cert-manager
 crds:
   enabled: true
 
+# Disabled on purpose, I want to create certificates explicitly not through an annotation
+# Enabling this will give the option to annotate Ingresses and let certs be created automatically
+# 
+# annotations:
+#  cert-manager.io/cluster-issuer: letsencrypt-prod
+# 
+# controller:
+#   ingressShim:
+#     defaultIssuerName: letsencrypt-prod
+#     defaultIssuerKind: ClusterIssuer
+#     defaultIssuerGroup: cert-manager.io
+
 extraEnv:
   - name: AWS_SHARED_CREDENTIALS_FILE
     value: /etc/cert-manager/aws-credentials
