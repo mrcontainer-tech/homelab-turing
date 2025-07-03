@@ -71,6 +71,7 @@ data:
             icon: https://grafana.mrcontainer.nl/icon.png
   widgets.yaml: |
     - kubernetes:
+        inCluster: true
         cluster:
           show: true
           cpu: true
