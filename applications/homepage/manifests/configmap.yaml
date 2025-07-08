@@ -31,11 +31,15 @@ data:
   custom.css: ""
   custom.js: ""
   bookmarks.yaml: |
-    - Developer:
-        - Github:
+    - Favorite Repos:
+        - Homelab-turing:
             - abbr: GH
-              href: https://github.com/
-  services.yaml: |
+              href: https://github.com/mrcontainer/homelab-turing
+              icon: https://github.com/favicon.ico
+        - Notes:
+            - abbr: Notes
+              href: https://github.com/scholtenmartijn/zk-vault
+              icon: https://github.com/favicon.ico
     - Bookmarks:
         - Github:
           href: https://github.com/
@@ -46,6 +50,7 @@ data:
         - Tweakers:
           href: https://tweakers.net/
           icon: https://tweakers.net/favicon.ico
+  services.yaml: |
     - Infrastructure:
         - ArgoCD:
             href: https://argocd.mrcontainer.nl/
