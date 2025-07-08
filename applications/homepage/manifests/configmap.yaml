@@ -42,14 +42,17 @@ data:
               icon: https://github.com/favicon.ico
     - Bookmarks:
         - Github:
-          href: https://github.com/
-          icon: https://github.com/favicon.ico
+            - abbr: GH
+              href: https://github.com/
+              icon: https://github.com/favicon.ico
         - ChatGPT:
-          href: https://chat.openai.com/
-          icon: https://cdn.oaistatic.com/assets/favicon-miwirzcw.ico
+            - abbr: ChatGPT
+              href: https://chat.openai.com/
+              icon: https://cdn.oaistatic.com/assets/favicon-miwirzcw.ico
         - Tweakers:
-          href: https://tweakers.net/
-          icon: https://tweakers.net/favicon.ico
+            - abbr: Tweakers
+              href: https://tweakers.net/
+              icon: https://tweakers.net/favicon.ico
   services.yaml: |
     - Infrastructure:
         - ArgoCD:
