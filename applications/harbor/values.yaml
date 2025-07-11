@@ -1,1 +1,11 @@
 # Values yaml file to make sure helm template can be rendered
+externalURL: https://harbor.mrcontainer.nl
+exposureType: proxy
+ingress:
+  enabled: false
+  core:
+    enabled: false
+  portal:
+    enabled: false
+# ingress.core.hostname: harbor.mrcontainer.nl
+# ingress.core.ingressClassName: nginx
