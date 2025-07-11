@@ -2,9 +2,7 @@
 
 A concise, lightweight decision log inspired by Architectural Decision Records (ADRs). Created it showcase a (simple) way of documenting decisions made in a semi-complex system.
 
----
-
-## 📋 Table of Decisions
+## Table of Decisions
 
 | ID  | Date       | Decision                                                                  | Notes                                                            |
 | --- | ---------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------- |
@@ -18,16 +16,3 @@ A concise, lightweight decision log inspired by Architectural Decision Records (
 | D8  | 2025-07-11 | Retro: Use homepage as a landingpage for my Homelab                       | Nice way of having a customizable homepage                       |
 | D9  | 2025-07-11 | Retro: Use Harbor as a way to pull in images that are used in the cluster | Excluded are the images used by K3s                              |
 | D10 | 2025-07-11 | Retro: Use Kyverno as a way to force to use the Harbor repository         | Really great way of doing policy-as-code                         |
-
----
-
-## 📝 How to Use
-
-1. **ID**: Assign a short, unique identifier (e.g., D1, D2).
-2. **Date**: Record the date of the decision (YYYY-MM-DD).
-3. **Decision**: Provide a clear, concise statement of the decision.
-4. **Notes**: Add brief context, trade-offs, or future considerations.
-
-- Add a new row for each decision.
-- Keep entries focused on the **what** and **why**, not implementation details.
-- Review and update entries as decisions evolve.
