@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: grafana-cert
+  namespace: kube-prometheus-stack
+spec:
+  secretName: grafana-tls
+  dnsNames:
+    - grafana.mrcontainer.nl
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
