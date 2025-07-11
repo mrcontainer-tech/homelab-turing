@@ -16,5 +16,5 @@ spec:
     solvers:
       - dns01:
           route53:
-            hostedZoneID: Z077931816VH0SRDNYVCT
+            hostedZoneID: Z077931816VH0SRDNYVCT # Hosted Zone ID for Route53 in my personal account
             region: eu-west-1
