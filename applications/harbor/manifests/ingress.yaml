@@ -1,0 +1,22 @@
+# harbor-chart-portal
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: harbor-ingress
+  namespace: harbor
+spec:
+  tls:
+    - hosts:
+        - harbor.mrcontainer.nl
+      secretName: harbor-tls
+  rules:
+    - host: harbor.mrcontainer.nl
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: harbor-chart-portal
+                port:
+                  number: 80
