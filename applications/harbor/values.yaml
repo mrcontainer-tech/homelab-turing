@@ -9,3 +9,8 @@ ingress:
     enabled: false
 # ingress.core.hostname: harbor.mrcontainer.nl
 # ingress.core.ingressClassName: nginx
+# 
+jobservice.replicaCount: 1
+portal.replicaCount: 1
+harbor.replicaCount: 1
+registry.replicaCount: 1
