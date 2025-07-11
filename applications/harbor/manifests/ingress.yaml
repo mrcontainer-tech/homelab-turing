@@ -17,6 +17,6 @@ spec:
             path: /
             backend:
               service:
-                name: harbor-chart-portal
+                name: harbor-chart
                 port:
                   number: 80
