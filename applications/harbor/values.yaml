@@ -2,5 +2,27 @@
 externalURL: http://harbor.mrcontainer.nl
 registry:
   relativeurls: true
+  replicaCount: 1
 exposureType: proxy
-service.type: ClusterIP
+service:
+  type: ClusterIP
+
+# disable chart-owned Ingress
+ingress:
+  enabled: false
+  core:
+    enabled: false
+  portal:
+    enabled: false
+
+# scale down extras
+jobservice:
+  replicaCount: 1
+portal:
+  replicaCount: 1
+harbor:
+  replicaCount: 1
+  
+nginx:
+  tls:
+    enabled: false
