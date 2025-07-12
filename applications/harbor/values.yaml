@@ -1,4 +1,6 @@
 # Values yaml file to make sure helm template can be rendered
-externalURL: https://harbor.mrcontainer.nl
+externalURL: http://harbor.mrcontainer.nl
+registry:
+  relativeurls: true
 exposureType: proxy
 service.type: ClusterIP
