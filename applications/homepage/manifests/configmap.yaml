@@ -74,9 +74,9 @@ data:
             icon: https://kyverno.mrcontainer.nl/icon.png
     - Dashboards:
         - Grafana:
-            href: http://grafana.mrcontainer.nl/
+            href: https://grafana.mrcontainer.nl/
             description: Grafana is the best
-            icon: https://grafana.mrcontainer.nl/icon.png
+            icon: https://grafana.mrcontainer.nl/public/img/fav32.png
   widgets.yaml: |
     - kubernetes:
         inCluster: true

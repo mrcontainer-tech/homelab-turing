@@ -1,16 +1,4 @@
 # Values yaml file to make sure helm template can be rendered
 externalURL: https://harbor.mrcontainer.nl
 exposureType: proxy
-ingress:
-  enabled: false
-  core:
-    enabled: false
-  portal:
-    enabled: false
-# ingress.core.hostname: harbor.mrcontainer.nl
-# ingress.core.ingressClassName: nginx
-# 
-jobservice.replicaCount: 1
-portal.replicaCount: 1
-harbor.replicaCount: 1
-registry.replicaCount: 1
+service.type: ClusterIP
