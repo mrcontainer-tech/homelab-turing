@@ -57,7 +57,7 @@ data:
     - Infrastructure:
         - ArgoCD:
             href: https://argocd.mrcontainer.nl/
-            description: ArgoCD is the good stuff
+            description: GitOps ftw!
             icon: https://argocd.mrcontainer.nl/assets/favicon/favicon-32x32.png
         - Longhorn:
             href: https://longhorn.mrcontainer.nl/
@@ -67,16 +67,20 @@ data:
         - Harbor:
             href: https://harbor.mrcontainer.nl/
             description: Harbor is the best
-            icon: https://harbor.mrcontainer.nl/icon.png
+            icon: https://harbor.mrcontainer.nl/images/harbor-logo.svg
         - Kyverno:
             href: https://kyverno.mrcontainer.nl/
-            description: Kyverno is the best
+            description: TODO
             icon: https://kyverno.mrcontainer.nl/icon.png
-    - Dashboards:
+    - Observability:
         - Grafana:
             href: https://grafana.mrcontainer.nl/
-            description: Grafana is the best
+            description: Dashboarding
             icon: https://grafana.mrcontainer.nl/public/img/fav32.png
+        - Prometheus:
+            href: https://prometheus.mrcontainer.nl/
+            description: TODO
+            icon: https://prometheus.mrcontainer.nl/favicon.ico
   widgets.yaml: |
     - kubernetes:
         inCluster: true

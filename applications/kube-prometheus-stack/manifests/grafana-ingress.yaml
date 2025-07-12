@@ -19,3 +19,5 @@ spec:
                 name: kube-prometheus-stack-chart-grafana
                 port:
                   number: 80
+
+
