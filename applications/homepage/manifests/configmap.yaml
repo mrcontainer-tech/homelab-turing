@@ -9,7 +9,7 @@ data:
   kubernetes.yaml: |
     mode: cluster
   settings.yaml: |
-    title: "Mr. Container Homepage"
+    title: "Homelab"
     description: "Welcome to my self-hosted deathstar! 🚀"
     background:
       image: https://images.unsplash.com/photo-1502790671504-542ad42d5189?auto=format&fit=crop&w=2560&q=80
@@ -67,20 +67,20 @@ data:
         - Harbor:
             href: https://harbor.mrcontainer.nl/
             description: Harbor is the best
-            icon: https://harbor.mrcontainer.nl/images/harbor-logo.svg
+            icon: https://harbor.mrcontainer.nl/favicon.ico?v=2
         - Kyverno:
             href: https://kyverno.mrcontainer.nl/
-            description: TODO
+            description: TODO - Setup Kyverno
             icon: https://kyverno.mrcontainer.nl/icon.png
     - Observability:
         - Grafana:
             href: https://grafana.mrcontainer.nl/
-            description: Dashboarding
+            description: Grafana UI
             icon: https://grafana.mrcontainer.nl/public/img/fav32.png
         - Prometheus:
             href: https://prometheus.mrcontainer.nl/
-            description: TODO
-            icon: https://prometheus.mrcontainer.nl/favicon.ico
+            description: Prometheus UI
+            icon: https://prometheus.mrcontainer.nl/favicon.svg
   widgets.yaml: |
     - kubernetes:
         inCluster: true
