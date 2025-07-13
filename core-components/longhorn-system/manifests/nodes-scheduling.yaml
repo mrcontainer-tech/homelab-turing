@@ -1,0 +1,38 @@
+# # core-components/longhorn/03-longhorn-nodes.yaml
+# TODO use gitops for the nodes
+# apiVersion: longhorn.io/v1beta2
+# kind: Node
+# metadata:
+#   name: node1
+#   namespace: longhorn-system
+# spec:
+#   unschedulable: true
+
+# ---
+# apiVersion: longhorn.io/v1beta2
+# kind: Node
+# metadata:
+#   name: node2
+#   namespace: longhorn-system
+# spec:
+#   unschedulable: true
+
+# ---
+# apiVersion: longhorn.io/v1beta2
+# kind: Node
+# metadata:
+#   name: node3
+#   namespace: longhorn-system
+# spec:
+#   unschedulable: true
+
+# ---
+# apiVersion: longhorn.io/v1beta2
+# kind: Node
+# metadata:
+#   name: node4
+#   namespace: longhorn-system
+# spec:
+#   unschedulable: false
+#   tags:
+#     - ssd

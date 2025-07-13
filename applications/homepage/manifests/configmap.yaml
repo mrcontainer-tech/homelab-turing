@@ -34,17 +34,17 @@ data:
     - Favorite Repos:
         - Homelab-turing:
             - abbr: GH
-              href: https://github.com/mrcontainer/homelab-turing
-              icon: https://github.com/favicon.ico
+              href: https://github.com/mrcontainer-tech/homelab-turing
+              icon: https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png
         - Notes:
             - abbr: Notes
               href: https://github.com/scholtenmartijn/zk-vault
-              icon: https://github.com/favicon.ico
+              icon: https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png
     - Bookmarks:
         - Github:
             - abbr: GH
               href: https://github.com/
-              icon: https://github.com/favicon.ico
+              icon: https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png
         - ChatGPT:
             - abbr: ChatGPT
               href: https://chat.openai.com/
@@ -91,7 +91,7 @@ data:
           showLabel: true
           label: "cluster"
         nodes:
-          show: true
+          show: false
           cpu: true
           memory: true
           showLabel: true
