@@ -1,0 +1,6 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: mariadb
+  labels:
+    app.kubernetes.io/name: mariadb
