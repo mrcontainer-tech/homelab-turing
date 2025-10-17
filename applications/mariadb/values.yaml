@@ -1,0 +1,11 @@
+architecture: standalone
+auth:
+  rootPassword: "rootpassword123"
+  username: "tikito_user"
+  password: "tikito_password"
+  database: "tikito"
+primary:
+  persistence:
+    enabled: true
+    storageClass: longhorn
+    size: 5Gi

@@ -1,0 +1,60 @@
+# Common
+namespaceOverride: ""
+imagePullPolicy: IfNotPresent
+
+# Backend
+backend:
+  image: "tikito/tikito-backend:latest"
+  replicas: 1
+  port: 8080                    # map your SERVER_PORT
+  finnhubToken: ""              # set via Secret or values
+  resources: {}
+  nodeSelector: {}              # e.g., {"kubernetes.io/arch": "arm64"}
+  tolerations: []
+  affinity: {}
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: true
+    className: traefik
+    hosts:
+      - host: api.tikito.local      # change to your domain
+        path: /
+    tls:
+      enabled: false
+      secretName: ""                # e.g., tikito-api-tls
+
+# UI
+ui:
+  image: "tikito/tikito-ui:latest"
+  replicas: 1
+  containerPort: 80
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: true
+    className: traefik
+    hosts:
+      - host: tikito.local          # change to your domain
+        path: /
+    tls:
+      enabled: false
+      secretName: ""                # e.g., tikito-ui-tls
+
+# Database wiring
+database:
+  host: "mariadb.tikito.svc.cluster.local"
+  port: 3306
+  name: "tikito"
+  user: "tikito_user"                 # mirrors mariadb auth.username
+  password: "tikito_password"         # mirrors mariadb auth.password
+
+# Optional: set to true if you prefer to store FINNHUB token in Secret instead of values
+secrets:
+  finnhub:
+    enabled: true
+    token: ""                       # if set, overrides backend.finnhubToken
