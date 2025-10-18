@@ -22,8 +22,8 @@ spec:
             - name: TZ
               valueFrom: { configMapKeyRef: { name: media-common, key: TZ } }
           resources:
-            requests: { cpu: "500m", memory: "512Mi" }
-            limits:   { cpu: "2000m", memory: "2Gi" }
+            requests: { cpu: "1000m", memory: "3Gi" }
+            limits:   { cpu: "2000m", memory: "5Gi" }
           volumeMounts:
             - name: config
               mountPath: /config
