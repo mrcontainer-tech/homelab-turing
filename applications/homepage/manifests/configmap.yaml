@@ -18,16 +18,12 @@ data:
       brightness: 50
       opacity: 50
     favicon: https://www.google.com/favicon.ico
-    theme: dark # or light
+    theme: dark
     color: slate
     layout:
       Media:
         style: row
         columns: 4
-  #settings.yaml: |
-  #  providers:
-  #    longhorn:
-  #      url: https://longhorn.my.network
   custom.css: ""
   custom.js: ""
   bookmarks.yaml: |
@@ -81,6 +77,50 @@ data:
             href: https://prometheus.mrcontainer.nl/
             description: Prometheus UI
             icon: https://prometheus.mrcontainer.nl/favicon.svg
+    - Media:
+        - Jellyfin:
+            href: https://jellyfin.mrcontainer.nl/
+            icon: https://jellyfin.org/images/favicon.ico
+            widget:
+              type: jellyfin
+              url: http://jellyfin.media.svc.cluster.local:8096
+              key: "061e304acaeb4e99bae2b7a93c2dc11d"
+        - Jellyseerr:
+            href: https://jellyseerr.mrcontainer.nl/
+            icon: https://jellyseerr.com/favicon.ico
+            widget:
+              type: jellyseerr
+              url: http://jellyseerr.media.svc.cluster.local:5055
+              key: "MTc2MDc5OTY0NzY4OGExYTcxMDE2LWY1NjgtNGI4Mi04M2JlLTk5YzZkMmMwMWUxNg=="
+        - Sonarr:
+            href: https://sonarr.mrcontainer.nl/
+            icon: https://sonarr.tv/img/favicon.ico
+            widget:
+              type: sonarr
+              url: http://sonarr.media.svc.cluster.local:8989
+              key: "649d8c8e141349d4832988dccec8a187"
+        - Prowlarr:
+            href: https://prowlarr.mrcontainer.nl/
+            icon: https://prowlarr.com/img/favicon.ico
+            widget:
+              type: prowlarr
+              url: http://prowlarr.media.svc.cluster.local:9696
+              key: "fcc07f63cb964f17a63d73cf6fe92dc2"
+        - Bazarr:
+            href: https://bazarr.mrcontainer.nl/
+            icon: https://www.bazarr.media/favicon.ico
+            widget:
+              type: bazarr
+              url: http://bazarr.media.svc.cluster.local:6767
+              key: "5984156640ff4611a1d737adaa25c4dc"
+        - qBittorrent:
+            href: https://qb.mrcontainer.nl/
+            icon: https://www.qbittorrent.org/favicon.ico
+            widget:
+              type: qbittorrent
+              url: http://qbittorrent.media.svc.cluster.local:8080
+              username: "admin"
+              password: "UIrzBDvyV"
   widgets.yaml: |
     - kubernetes:
         inCluster: true
