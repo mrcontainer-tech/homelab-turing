@@ -87,7 +87,7 @@ data:
               key: "061e304acaeb4e99bae2b7a93c2dc11d"
         - Jellyseerr:
             href: https://jellyseerr.mrcontainer.nl/
-            icon: https://jellyseerr.com/favicon.ico
+            icon: https://jellyseerr.mrcontainer.nl/favicon-32x32.png
             widget:
               type: jellyseerr
               url: http://jellyseerr.media.svc.cluster.local:5055
@@ -108,7 +108,7 @@ data:
               key: "fcc07f63cb964f17a63d73cf6fe92dc2"
         - Bazarr:
             href: https://bazarr.mrcontainer.nl/
-            icon: https://www.bazarr.media/favicon.ico
+            icon: https://bazarr.mrcontainer.nl/images/favicon.ico
             widget:
               type: bazarr
               url: http://bazarr.media.svc.cluster.local:6767
