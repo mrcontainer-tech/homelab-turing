@@ -1,0 +1,11 @@
+---
+# Claims binding explicitly to the above PVs
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: media-rwx
+  namespace: media
+spec:
+  accessModes: [ReadWriteMany]
+  resources: { requests: { storage: 900Gi } }
+  volumeName: media-pv

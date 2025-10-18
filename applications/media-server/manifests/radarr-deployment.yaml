@@ -1,0 +1,46 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radarr
+  namespace: media
+  labels: { app: radarr }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: radarr } }
+  template:
+    metadata:
+      labels: { app: radarr }
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: node4
+      containers:
+        - name: radarr
+          image: lscr.io/linuxserver/radarr:latest
+          ports:
+            - containerPort: 7878
+          env:
+            - name: TZ
+              valueFrom: { configMapKeyRef: { name: media-common, key: TZ } }
+            - name: PUID
+              valueFrom: { configMapKeyRef: { name: media-common, key: PUID } }
+            - name: PGID
+              valueFrom: { configMapKeyRef: { name: media-common, key: PGID } }
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: downloads
+              mountPath: /downloads
+            - name: media
+              mountPath: /movies
+              subPath: movies
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits:   { cpu: 500m, memory: 1Gi }
+      volumes:
+        - name: config
+          persistentVolumeClaim: { claimName: radarr-config }
+        - name: downloads
+          persistentVolumeClaim: { claimName: downloads-rwx }
+        - name: media
+          persistentVolumeClaim: { claimName: media-rwx }

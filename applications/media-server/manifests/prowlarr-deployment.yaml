@@ -1,0 +1,37 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prowlarr
+  namespace: media
+  labels: { app: prowlarr }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: prowlarr } }
+  template:
+    metadata:
+      labels: { app: prowlarr }
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: node4
+      containers:
+        - name: prowlarr
+          image: lscr.io/linuxserver/prowlarr:latest
+          ports:
+            - containerPort: 9696
+          env:
+            - name: TZ
+              valueFrom: { configMapKeyRef: { name: media-common, key: TZ } }
+            - name: PUID
+              valueFrom: { configMapKeyRef: { name: media-common, key: PUID } }
+            - name: PGID
+              valueFrom: { configMapKeyRef: { name: media-common, key: PGID } }
+          volumeMounts:
+            - name: config
+              mountPath: /config
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { cpu: 500m, memory: 512Mi }
+      volumes:
+        - name: config
+          persistentVolumeClaim: { claimName: prowlarr-config }

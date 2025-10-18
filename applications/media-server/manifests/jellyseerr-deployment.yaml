@@ -1,0 +1,55 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jellyseerr
+  namespace: media
+  labels:
+    app: jellyseerr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jellyseerr
+  template:
+    metadata:
+      labels:
+        app: jellyseerr
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: node4
+      containers:
+        - name: jellyseerr
+          image: lscr.io/linuxserver/jellyseerr:latest
+          ports:
+            - containerPort: 5055
+          env:
+            - name: TZ
+              valueFrom:
+                configMapKeyRef:
+                  name: media-common
+                  key: TZ
+            - name: PUID
+              valueFrom:
+                configMapKeyRef:
+                  name: media-common
+                  key: PUID
+            - name: PGID
+              valueFrom:
+                configMapKeyRef:
+                  name: media-common
+                  key: PGID
+          volumeMounts:
+            - name: config
+              mountPath: /config
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 512Mi
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: jellyseerr-config

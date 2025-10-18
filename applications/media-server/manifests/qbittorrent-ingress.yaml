@@ -1,0 +1,20 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: qbittorrent
+  namespace: media
+spec:
+  tls:
+    - hosts: [ "qb.mrcontainer.nl" ]
+      secretName: qbittorrent-tls
+  rules:
+    - host: qb.mrcontainer.nl
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: qbittorrent
+                port: { number: 8080 }

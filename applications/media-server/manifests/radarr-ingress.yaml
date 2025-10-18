@@ -1,0 +1,20 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: radarr
+  namespace: media
+spec:
+  tls:
+    - hosts: [ "radarr.mrcontainer.nl" ]
+      secretName: radarr-tls
+  rules:
+    - host: radarr.mrcontainer.nl
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: radarr
+                port: { number: 7878 }

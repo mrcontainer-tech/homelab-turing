@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: media-common
+  namespace: media
+data:
+  TZ: "Europe/Amsterdam"
+  PUID: "1000"   # match your node4 user id owning /mnt/ssd
+  PGID: "1000"

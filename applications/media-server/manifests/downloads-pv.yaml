@@ -1,0 +1,20 @@
+---
+# Shared DOWNLOADS PV on node4 (hostPath)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: downloads-pv
+spec:
+  capacity: { storage: 500Gi }     # adjust
+  accessModes: [ReadWriteMany]
+  persistentVolumeReclaimPolicy: Retain
+  volumeMode: Filesystem
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: ["node4"]
+  hostPath:
+    path: /mnt/ssd/downloads
