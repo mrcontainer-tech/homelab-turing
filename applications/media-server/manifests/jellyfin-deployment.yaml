@@ -1,4 +1,3 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -22,24 +21,22 @@ spec:
           env:
             - name: TZ
               valueFrom: { configMapKeyRef: { name: media-common, key: TZ } }
+          resources:
+            requests: { cpu: "500m", memory: "512Mi" }
+            limits:   { cpu: "2000m", memory: "2Gi" }
           volumeMounts:
             - name: config
               mountPath: /config
             - name: media
               mountPath: /media
-            - name: jf-cache
-              hostPath:
-                path: /mnt/ssd/cache/jellyfin
-                type: DirectoryOrCreate
-          resources:
-            requests:
-              cpu: "500m"
-              memory: "512Mi"
-            limits:
-              cpu: "2000m"   # 2 cores
-              memory: "2Gi"
+            - name: jf-cache              
+              mountPath: /cache
       volumes:
         - name: config
           persistentVolumeClaim: { claimName: jellyfin-config }
         - name: media
           persistentVolumeClaim: { claimName: media-rwx }
+        - name: jf-cache                 
+          hostPath:
+            path: /mnt/ssd/cache/jellyfin
+            type: DirectoryOrCreate
