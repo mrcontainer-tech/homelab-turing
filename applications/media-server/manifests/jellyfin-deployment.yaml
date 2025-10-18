@@ -27,9 +27,17 @@ spec:
               mountPath: /config
             - name: media
               mountPath: /media
+            - name: jf-cache
+              hostPath:
+                path: /mnt/ssd/cache/jellyfin
+                type: DirectoryOrCreate
           resources:
-            requests: { cpu: 200m, memory: 256Mi }
-            limits:   { cpu: 1000m, memory: 1Gi }
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"   # 2 cores
+              memory: "2Gi"
       volumes:
         - name: config
           persistentVolumeClaim: { claimName: jellyfin-config }
