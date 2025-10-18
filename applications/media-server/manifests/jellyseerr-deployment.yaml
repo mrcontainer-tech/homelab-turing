@@ -20,7 +20,7 @@ spec:
         kubernetes.io/hostname: node4
       containers:
         - name: jellyseerr
-          image: docker.io/fallenbagel/jellyseerr:sha-42eec24
+          image: docker.io/fallenbagel/jellyseerr:2.7.3
           ports:
             - containerPort: 5055
           env:
