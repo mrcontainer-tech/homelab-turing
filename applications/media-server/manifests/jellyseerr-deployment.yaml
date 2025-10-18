@@ -20,7 +20,7 @@ spec:
         kubernetes.io/hostname: node4
       containers:
         - name: jellyseerr
-          image: lscr.io/linuxserver/jellyseerr:latest
+          image: docker.io/linuxserver/jellyseerr:latest
           ports:
             - containerPort: 5055
           env:
