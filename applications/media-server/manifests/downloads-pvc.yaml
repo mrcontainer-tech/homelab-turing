@@ -5,6 +5,7 @@ metadata:
   name: downloads-rwx
   namespace: media
 spec:
+  storageClassName: ""
   accessModes: [ReadWriteMany]
   resources: { requests: { storage: 500Gi } }
   volumeName: downloads-pv
