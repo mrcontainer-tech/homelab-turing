@@ -17,13 +17,13 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/hostname: node4
-      # Share the Pod network: Gluetun sets default route for the Pod
       containers:
         - name: gluetun
           image: qmcgaw/gluetun:latest
           securityContext:
             capabilities:
-              add: ["NET_ADMIN"]
+              add:
+                - NET_ADMIN
           env:
             - name: VPN_SERVICE_PROVIDER
               value: protonvpn
@@ -39,10 +39,10 @@ spec:
                 secretKeyRef:
                   name: protonvpn-creds
                   key: OPENVPN_PASSWORD
-            # Pick exit region(s)
+            # Choose your exit location(s)
             - name: SERVER_COUNTRIES
               value: Serbia
-            # Kill-switch & allow cluster/LAN access to the WebUI
+            # Kill-switch and allowances for WebUI and cluster/LAN
             - name: FIREWALL
               value: "on"
             - name: FIREWALL_INPUT_PORTS
@@ -55,14 +55,18 @@ spec:
                   name: media-common
                   key: TZ
           volumeMounts:
-            - name: gluetun
-              mountPath: /gluetun
+            - name: gluetun-auth
+              mountPath: /gluetun/auth/config.toml
+              subPath: config.toml
+              readOnly: true
           readinessProbe:
             httpGet:
-              path: /v1/publicip
+              path: /v1/publicip/ip
               port: 8000
             initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
 
         - name: qbittorrent
           image: lscr.io/linuxserver/qbittorrent:latest
@@ -84,8 +88,18 @@ spec:
                   key: PGID
             - name: WEBUI_PORT
               value: "8080"
+            # Optional: set persistent WebUI credentials via a Secret (if created)
+            # - name: QBT_WEBUI_USERNAME
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: qb-webui-auth
+            #       key: QBT_WEBUI_USERNAME
+            # - name: QBT_WEBUI_PASSWORD_PBKDF2
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: qb-webui-auth
+            #       key: QBT_WEBUI_PASSWORD_PBKDF2
           ports:
-            # Expose ONLY the WebUI. Peer ports are not forwarded with ProtonVPN.
             - name: webui
               containerPort: 8080
               protocol: TCP
@@ -94,14 +108,14 @@ spec:
               mountPath: /config
             - name: downloads
               mountPath: /downloads
-          # Don’t start until VPN is ready
           readinessProbe:
             httpGet:
               path: /
               port: 8080
             initialDelaySeconds: 20
             periodSeconds: 10
-
+            timeoutSeconds: 2
+            failureThreshold: 6
       volumes:
         - name: config
           persistentVolumeClaim:
@@ -109,8 +123,9 @@ spec:
         - name: downloads
           persistentVolumeClaim:
             claimName: downloads-rwx
-        - name: gluetun
-          emptyDir: {}
-
-      # Optional: restrict the Pod from scheduling off node4 (SSD locality)
-      tolerations: []
+        - name: gluetun-auth
+          configMap:
+            name: gluetun-control-auth
+            items:
+              - key: config.toml
+                path: config.toml

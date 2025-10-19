@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gluetun-control-auth
+  namespace: media
+data:
+  config.toml: |
+    [[roles]]
+    name = "k8s-probe"
+    # Allow only this endpoint without auth
+    routes = ["GET /v1/publicip/ip"]
+    auth = "none"
