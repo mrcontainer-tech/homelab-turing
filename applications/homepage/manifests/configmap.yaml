@@ -62,11 +62,11 @@ data:
     - Security:
         - Harbor:
             href: https://harbor.mrcontainer.nl/
-            description: TODO: Harbor is the best
+            description: TODO
             icon: https://harbor.mrcontainer.nl/favicon.ico?v=2
         - Kyverno:
             href: https://kyverno.mrcontainer.nl/
-            description: TODO: Setup Kyverno
+            description: TODO
             icon: https://kyverno.mrcontainer.nl/icon.png
     - Observability:
         - Grafana:
