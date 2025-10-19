@@ -42,6 +42,8 @@ spec:
             # Choose your exit location(s)
             - name: SERVER_COUNTRIES
               value: Serbia
+            - name: PORT_FORWARD_ONLY
+              value: "on"
             # Kill-switch and allowances for WebUI and cluster/LAN
             - name: FIREWALL
               value: "on"

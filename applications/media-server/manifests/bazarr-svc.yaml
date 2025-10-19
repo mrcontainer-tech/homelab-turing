@@ -4,9 +4,13 @@ kind: Service
 metadata:
   name: bazarr
   namespace: media
+  labels:
+    app: bazarr
 spec:
-  selector: { app: bazarr }
+  selector:
+    app: bazarr
   ports:
     - name: http
       port: 6767
       targetPort: 6767
+      protocol: TCP
