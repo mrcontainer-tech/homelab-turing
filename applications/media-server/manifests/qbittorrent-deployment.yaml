@@ -44,6 +44,8 @@ spec:
               value: Serbia
             - name: PORT_FORWARD_ONLY
               value: "on"
+            - name: VPN_PORT_FORWARDING
+              value: "on"
             # Kill-switch and allowances for WebUI and cluster/LAN
             - name: FIREWALL
               value: "on"
