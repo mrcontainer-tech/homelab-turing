@@ -1,41 +1,65 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: bazarr
   namespace: media
-  labels: { app: bazarr }
+  labels:
+    app: bazarr
 spec:
   replicas: 1
-  selector: { matchLabels: { app: bazarr } }
+  selector:
+    matchLabels:
+      app: bazarr
   template:
     metadata:
-      labels: { app: bazarr }
+      labels:
+        app: bazarr
     spec:
       nodeSelector:
         kubernetes.io/hostname: node4
       containers:
         - name: bazarr
-          image: lscr.io/linuxserver/bazarr:latest
+          image: lscr.io/linuxserver/bazarr:v1.5.3-ls322
           ports:
             - containerPort: 6767
           env:
             - name: TZ
-              valueFrom: { configMapKeyRef: { name: media-common, key: TZ } }
+              valueFrom:
+                configMapKeyRef:
+                  name: media-common
+                  key: TZ
             - name: PUID
-              valueFrom: { configMapKeyRef: { name: media-common, key: PUID } }
+              valueFrom:
+                configMapKeyRef:
+                  name: media-common
+                  key: PUID
             - name: PGID
-              valueFrom: { configMapKeyRef: { name: media-common, key: PGID } }
+              valueFrom:
+                configMapKeyRef:
+                  name: media-common
+                  key: PGID
           volumeMounts:
             - name: config
               mountPath: /config
             - name: media
               mountPath: /media
+            - name: media
+              mountPath: /tv
+              subPath: tv
+            - name: media
+              mountPath: /movies
+              subPath: movies
           resources:
-            requests: { cpu: 50m, memory: 128Mi }
-            limits:   { cpu: 300m, memory: 512Mi }
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 512Mi
       volumes:
         - name: config
-          persistentVolumeClaim: { claimName: bazarr-config }
+          persistentVolumeClaim:
+            claimName: bazarr-config
         - name: media
-          persistentVolumeClaim: { claimName: media-rwx }
+          persistentVolumeClaim:
+            claimName: media-rwx
