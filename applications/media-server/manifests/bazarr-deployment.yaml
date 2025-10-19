@@ -19,7 +19,7 @@ spec:
         kubernetes.io/hostname: node4
       containers:
         - name: bazarr
-          image: lscr.io/linuxserver/bazarr:v1.5.3-ls322
+          image: lscr.io/linuxserver/bazarr:latest
           ports:
             - containerPort: 6767
           env:
