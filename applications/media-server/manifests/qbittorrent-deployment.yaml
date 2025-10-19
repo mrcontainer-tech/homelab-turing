@@ -1,50 +1,116 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: qbittorrent
   namespace: media
-  labels: { app: qbittorrent }
+  labels:
+    app: qbittorrent
 spec:
   replicas: 1
-  selector: { matchLabels: { app: qbittorrent } }
+  selector:
+    matchLabels:
+      app: qbittorrent
   template:
     metadata:
-      labels: { app: qbittorrent }
+      labels:
+        app: qbittorrent
     spec:
       nodeSelector:
         kubernetes.io/hostname: node4
+      # Share the Pod network: Gluetun sets default route for the Pod
       containers:
+        - name: gluetun
+          image: qmcgaw/gluetun:latest
+          securityContext:
+            capabilities:
+              add: ["NET_ADMIN"]
+          env:
+            - name: VPN_SERVICE_PROVIDER
+              value: protonvpn
+            - name: VPN_TYPE
+              value: openvpn
+            - name: OPENVPN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: protonvpn-creds
+                  key: OPENVPN_USER
+            - name: OPENVPN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: protonvpn-creds
+                  key: OPENVPN_PASSWORD
+            # Pick exit region(s)
+            - name: SERVER_COUNTRIES
+              value: Serbia
+            # Kill-switch & allow cluster/LAN access to the WebUI
+            - name: FIREWALL
+              value: "on"
+            - name: FIREWALL_INPUT_PORTS
+              value: "8080"
+            - name: FIREWALL_OUTBOUND_SUBNETS
+              value: "10.42.0.0/16,10.43.0.0/16,192.168.68.0/24"
+            - name: TZ
+              valueFrom:
+                configMapKeyRef:
+                  name: media-common
+                  key: TZ
+          volumeMounts:
+            - name: gluetun
+              mountPath: /gluetun
+          readinessProbe:
+            httpGet:
+              path: /v1/publicip
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
         - name: qbittorrent
           image: lscr.io/linuxserver/qbittorrent:latest
-          ports:
-            - containerPort: 8080  # WebUI
-            - containerPort: 6881  # TCP
-            - containerPort: 6881  # UDP
-              protocol: UDP
           env:
             - name: TZ
-              valueFrom: { configMapKeyRef: { name: media-common, key: TZ } }
+              valueFrom:
+                configMapKeyRef:
+                  name: media-common
+                  key: TZ
             - name: PUID
-              valueFrom: { configMapKeyRef: { name: media-common, key: PUID } }
+              valueFrom:
+                configMapKeyRef:
+                  name: media-common
+                  key: PUID
             - name: PGID
-              valueFrom: { configMapKeyRef: { name: media-common, key: PGID } }
+              valueFrom:
+                configMapKeyRef:
+                  name: media-common
+                  key: PGID
             - name: WEBUI_PORT
               value: "8080"
-            - name: QBT_WEBUI_USERNAME
-              valueFrom: { secretKeyRef: { name: media-admin, key: qbittorrent_user } }
-            - name: QBT_WEBUI_PASSWORD
-              valueFrom: { secretKeyRef: { name: media-admin, key: qbittorrent_pass } }
+          ports:
+            # Expose ONLY the WebUI. Peer ports are not forwarded with ProtonVPN.
+            - name: webui
+              containerPort: 8080
+              protocol: TCP
           volumeMounts:
             - name: config
               mountPath: /config
             - name: downloads
               mountPath: /downloads
-          resources:
-            requests: { cpu: 200m, memory: 256Mi }
-            limits:   { cpu: 1000m, memory: 1Gi }
+          # Don’t start until VPN is ready
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+
       volumes:
         - name: config
-          persistentVolumeClaim: { claimName: qbittorrent-config }
+          persistentVolumeClaim:
+            claimName: qbittorrent-config
         - name: downloads
-          persistentVolumeClaim: { claimName: downloads-rwx }
+          persistentVolumeClaim:
+            claimName: downloads-rwx
+        - name: gluetun
+          emptyDir: {}
+
+      # Optional: restrict the Pod from scheduling off node4 (SSD locality)
+      tolerations: []
