@@ -62,11 +62,11 @@ data:
     - Security:
         - Harbor:
             href: https://harbor.mrcontainer.nl/
-            description: Harbor is the best
+            description: TODO: Harbor is the best
             icon: https://harbor.mrcontainer.nl/favicon.ico?v=2
         - Kyverno:
             href: https://kyverno.mrcontainer.nl/
-            description: TODO - Setup Kyverno
+            description: TODO: Setup Kyverno
             icon: https://kyverno.mrcontainer.nl/icon.png
     - Observability:
         - Grafana:
@@ -128,7 +128,7 @@ data:
           show: true
           cpu: true
           memory: true
-          showLabel: true
+          showLabel: false
           label: "cluster"
         nodes:
           show: false
