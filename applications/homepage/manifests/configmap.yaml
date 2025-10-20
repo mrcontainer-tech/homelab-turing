@@ -113,13 +113,6 @@ data:
               type: radarr
               url: https://radarr.mrcontainer.nl
               key: "afdd1ed69e80489bb5d26cc72499f76b"
-        - Bazarr:
-            href: https://bazarr.mrcontainer.nl/
-            icon: https://bazarr.mrcontainer.nl/images/favicon.ico
-            widget:
-              type: bazarr
-              url: http://bazarr.media.svc.cluster.local:6767
-              key: "5984156640ff4611a1d737adaa25c4dc"
         - qBittorrent:
             href: https://qb.mrcontainer.nl/
             icon: https://qb.mrcontainer.nl/images/qbittorrent32.png
