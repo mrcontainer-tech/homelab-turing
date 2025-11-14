@@ -84,7 +84,7 @@ data:
             widget:
               type: jellyfin
               url: http://jellyfin.media.svc.cluster.local:8096
-              key: "061e304acaeb4e99bae2b7a93c2dc11d"
+              key: "32ffc16ba2384d55a5f041137dcf7c43"
         - Jellyseerr:
             href: https://jellyseerr.mrcontainer.nl/
             icon: https://jellyseerr.mrcontainer.nl/favicon-32x32.png
