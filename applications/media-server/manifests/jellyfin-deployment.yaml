@@ -54,18 +54,9 @@ spec:
           persistentVolumeClaim:
             claimName: jellyfin-config
         - name: media
-<<<<<<< HEAD
           persistentVolumeClaim:
             claimName: media-rwx
         - name: jf-cache                 
-||||||| 267dbca
-          persistentVolumeClaim: { claimName: media-rwx }
-        - name: jf-cache                 
-=======
-          persistentVolumeClaim:
-            claimName: media-rwx
-        - name: jf-cache
->>>>>>> ad40f6072ee1ccac41b097e6fb98964798201eda
           hostPath:
             path: /mnt/ssd/cache/jellyfin
             type: DirectoryOrCreate

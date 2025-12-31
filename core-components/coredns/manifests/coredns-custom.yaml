@@ -1,11 +1,35 @@
 ---
+# Direct ConfigMap patch for CoreDNS to fix Tailscale DNS issues
+# This replaces the default 'forward . /etc/resolv.conf' with explicit DNS servers
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: coredns-custom
+  name: coredns
   namespace: kube-system
 data:
-  # Override the forward directive to use specific DNS servers
-  # instead of /etc/resolv.conf which may contain Tailscale DNS
-  custom.override: |
-    forward . 192.168.68.1 8.8.8.8 1.1.1.1
+  Corefile: |
+    .:53 {
+        errors
+        health
+        ready
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+          pods insecure
+          fallthrough in-addr.arpa ip6.arpa
+        }
+        hosts /etc/coredns/NodeHosts {
+          ttl 60
+          reload 15s
+          fallthrough
+        }
+        prometheus :9153
+        forward . 192.168.68.1 8.8.8.8 1.1.1.1
+        cache 30
+        loop
+        reload
+        loadbalance
+    }
+  NodeHosts: |
+    192.168.68.101 node1
+    192.168.68.102 node2
+    192.168.68.103 node3
+    192.168.68.104 node4
