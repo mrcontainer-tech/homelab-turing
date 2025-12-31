@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-custom
+  namespace: kube-system
+data:
+  # Override the forward directive to use specific DNS servers
+  # instead of /etc/resolv.conf which may contain Tailscale DNS
+  custom.override: |
+    forward . 192.168.68.1 8.8.8.8 1.1.1.1
