@@ -16,6 +16,7 @@ spec:
       labels:
         app: jellyseerr
     spec:
+      dnsPolicy: ClusterFirst
       nodeSelector:
         kubernetes.io/hostname: node4
       containers:

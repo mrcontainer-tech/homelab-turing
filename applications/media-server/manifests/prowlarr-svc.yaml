@@ -5,7 +5,8 @@ metadata:
   name: prowlarr
   namespace: media
 spec:
-  selector: { app: prowlarr }
+  selector:
+    app: prowlarr
   ports:
     - name: http
       port: 9696

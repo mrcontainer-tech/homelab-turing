@@ -5,7 +5,8 @@ metadata:
   name: qbittorrent
   namespace: media
 spec:
-  selector: { app: qbittorrent }
+  selector:
+    app: qbittorrent
   ports:
     - name: http
       port: 8080

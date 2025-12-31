@@ -5,7 +5,8 @@ metadata:
   name: radarr
   namespace: media
 spec:
-  selector: { app: radarr }
+  selector:
+    app: radarr
   ports:
     - name: http
       port: 7878

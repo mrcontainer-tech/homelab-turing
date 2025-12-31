@@ -18,4 +18,5 @@ spec:
             backend:
               service:
                 name: jellyfin
-                port: { number: 8096 }
+                port:
+                  number: 8096

@@ -6,7 +6,10 @@ metadata:
   name: media-rwx
   namespace: media
 spec:
-  storageClassName: "" 
-  accessModes: [ReadWriteMany]
-  resources: { requests: { storage: 900Gi } }
+  storageClassName: ""
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 900Gi
   volumeName: media-pv

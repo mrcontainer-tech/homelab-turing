@@ -17,4 +17,5 @@ spec:
             backend:
               service:
                 name: bazarr
-                port: { number: 6767 }
+                port:
+                  number: 6767

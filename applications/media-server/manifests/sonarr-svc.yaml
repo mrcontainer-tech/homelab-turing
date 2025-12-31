@@ -5,7 +5,8 @@ metadata:
   name: sonarr
   namespace: media
 spec:
-  selector: { app: sonarr }
+  selector:
+    app: sonarr
   ports:
     - name: http
       port: 8989

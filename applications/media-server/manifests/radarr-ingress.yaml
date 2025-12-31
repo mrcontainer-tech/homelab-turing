@@ -17,4 +17,5 @@ spec:
             backend:
               service:
                 name: radarr
-                port: { number: 7878 }
+                port:
+                  number: 7878

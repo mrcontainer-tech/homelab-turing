@@ -4,13 +4,17 @@ kind: Deployment
 metadata:
   name: radarr
   namespace: media
-  labels: { app: radarr }
+  labels:
+    app: radarr
 spec:
   replicas: 1
-  selector: { matchLabels: { app: radarr } }
+  selector:
+    matchLabels:
+      app: radarr
   template:
     metadata:
-      labels: { app: radarr }
+      labels:
+        app: radarr
     spec:
       nodeSelector:
         kubernetes.io/hostname: node4
@@ -21,11 +25,20 @@ spec:
             - containerPort: 7878
           env:
             - name: TZ
-              valueFrom: { configMapKeyRef: { name: media-common, key: TZ } }
+              valueFrom:
+                configMapKeyRef:
+                  name: media-common
+                  key: TZ
             - name: PUID
-              valueFrom: { configMapKeyRef: { name: media-common, key: PUID } }
+              valueFrom:
+                configMapKeyRef:
+                  name: media-common
+                  key: PUID
             - name: PGID
-              valueFrom: { configMapKeyRef: { name: media-common, key: PGID } }
+              valueFrom:
+                configMapKeyRef:
+                  name: media-common
+                  key: PGID
           volumeMounts:
             - name: config
               mountPath: /config
@@ -35,12 +48,19 @@ spec:
               mountPath: /movies
               subPath: movies
           resources:
-            requests: { cpu: 100m, memory: 256Mi }
-            limits:   { cpu: 500m, memory: 1Gi }
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
       volumes:
         - name: config
-          persistentVolumeClaim: { claimName: radarr-config }
+          persistentVolumeClaim:
+            claimName: radarr-config
         - name: downloads
-          persistentVolumeClaim: { claimName: downloads-rwx }
+          persistentVolumeClaim:
+            claimName: downloads-rwx
         - name: media
-          persistentVolumeClaim: { claimName: media-rwx }
+          persistentVolumeClaim:
+            claimName: media-rwx

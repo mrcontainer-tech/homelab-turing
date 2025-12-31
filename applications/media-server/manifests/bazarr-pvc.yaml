@@ -5,6 +5,9 @@ metadata:
   name: bazarr-config
   namespace: media
 spec:
-  accessModes: [ReadWriteOnce]
+  accessModes:
+    - ReadWriteOnce
   storageClassName: longhorn
-  resources: { requests: { storage: 1Gi } }
+  resources:
+    requests:
+      storage: 1Gi

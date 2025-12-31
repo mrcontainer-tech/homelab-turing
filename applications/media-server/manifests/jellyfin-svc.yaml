@@ -5,7 +5,8 @@ metadata:
   name: jellyfin
   namespace: media
 spec:
-  selector: { app: jellyfin }
+  selector:
+    app: jellyfin
   ports:
     - name: http
       port: 8096

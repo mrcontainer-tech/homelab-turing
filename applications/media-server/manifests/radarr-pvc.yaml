@@ -5,6 +5,9 @@ metadata:
   name: radarr-config
   namespace: media
 spec:
-  accessModes: [ReadWriteOnce]
+  accessModes:
+    - ReadWriteOnce
   storageClassName: longhorn
-  resources: { requests: { storage: 2Gi } }
+  resources:
+    requests:
+      storage: 2Gi

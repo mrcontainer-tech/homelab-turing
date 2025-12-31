@@ -17,4 +17,5 @@ spec:
             backend:
               service:
                 name: qbittorrent
-                port: { number: 8080 }
+                port:
+                  number: 8080

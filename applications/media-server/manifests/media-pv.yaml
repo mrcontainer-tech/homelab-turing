@@ -5,8 +5,10 @@ kind: PersistentVolume
 metadata:
   name: media-pv
 spec:
-  capacity: { storage: 900Gi }   # adjust to your SSD free space
-  accessModes: [ReadWriteMany]
+  capacity:
+    storage: 900Gi   # adjust to your SSD free space
+  accessModes:
+    - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   volumeMode: Filesystem
   nodeAffinity: # Bind to node4

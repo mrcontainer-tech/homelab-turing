@@ -5,8 +5,10 @@ kind: PersistentVolume
 metadata:
   name: downloads-pv
 spec:
-  capacity: { storage: 500Gi }     # adjust
-  accessModes: [ReadWriteMany]
+  capacity:
+    storage: 500Gi     # adjust
+  accessModes:
+    - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   volumeMode: Filesystem
   nodeAffinity:

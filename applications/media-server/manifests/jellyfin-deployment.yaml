@@ -3,13 +3,17 @@ kind: Deployment
 metadata:
   name: jellyfin
   namespace: media
-  labels: { app: jellyfin }
+  labels:
+    app: jellyfin
 spec:
   replicas: 1
-  selector: { matchLabels: { app: jellyfin } }
+  selector:
+    matchLabels:
+      app: jellyfin
   template:
     metadata:
-      labels: { app: jellyfin }
+      labels:
+        app: jellyfin
     spec:
       nodeSelector:
         kubernetes.io/hostname: node4
@@ -20,10 +24,17 @@ spec:
             - containerPort: 8096
           env:
             - name: TZ
-              valueFrom: { configMapKeyRef: { name: media-common, key: TZ } }
+              valueFrom:
+                configMapKeyRef:
+                  name: media-common
+                  key: TZ
           resources:
-            requests: { cpu: "1000m", memory: "3Gi" }
-            limits:   { cpu: "2000m", memory: "5Gi" }
+            requests:
+              cpu: "1000m"
+              memory: "3Gi"
+            limits:
+              cpu: "2000m"
+              memory: "5Gi"
           volumeMounts:
             - name: config
               mountPath: /config
@@ -33,9 +44,11 @@ spec:
               mountPath: /cache
       volumes:
         - name: config
-          persistentVolumeClaim: { claimName: jellyfin-config }
+          persistentVolumeClaim:
+            claimName: jellyfin-config
         - name: media
-          persistentVolumeClaim: { claimName: media-rwx }
+          persistentVolumeClaim:
+            claimName: media-rwx
         - name: jf-cache                 
           hostPath:
             path: /mnt/ssd/cache/jellyfin

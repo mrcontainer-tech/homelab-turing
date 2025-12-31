@@ -17,4 +17,5 @@ spec:
             backend:
               service:
                 name: prowlarr
-                port: { number: 9696 }
+                port:
+                  number: 9696

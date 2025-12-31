@@ -5,6 +5,9 @@ metadata:
   name: jellyfin-config
   namespace: media
 spec:
-  accessModes: [ReadWriteOnce]
+  accessModes:
+    - ReadWriteOnce
   storageClassName: longhorn
-  resources: { requests: { storage: 5Gi } }
+  resources:
+    requests:
+      storage: 5Gi

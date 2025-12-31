@@ -21,4 +21,5 @@ spec:
             backend:
               service:
                 name: sonarr
-                port: { number: 8989 }
+                port:
+                  number: 8989
