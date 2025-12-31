@@ -17,8 +17,6 @@ This Kubernetes cluster on top of my Turing PI is off course over-engineered and
 
 ### Kubernetes distribution
 
-To start with Kubernetes I choose to use K3s.
-
 ### K3s
 
 The Kubernetes distrubution I choose is K3s, as I wanted to still have the ability to SSH into the nodes and troubleshoot or experiment with the cluster. Also I have experience with K3s and I feel its a great lightweight Kubernetes distribution. Other distributions I have considered are Talos and MicroK8s.
@@ -69,6 +67,10 @@ For DNS:
 - CoreDNS
 - ExternalDNS (Route53)
 
+For Serverless & Functions:
+
+- Knative Serving (CNCF graduated serverless platform)
+
 ### Applications
 
-Applicatio
+Applications are the end-user workloads and services running on the cluster. These showcase practical use cases and development workflows.

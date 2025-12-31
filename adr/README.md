@@ -16,3 +16,6 @@ A concise, lightweight decision log inspired by Architectural Decision Records (
 | D8  | 2025-07-11 | Retro: Use homepage as a landingpage for my Homelab                       | Nice way of having a customizable homepage                       |
 | D9  | 2025-07-11 | Retro: Use Harbor as a way to pull in images that are used in the cluster | Excluded are the images used by K3s                              |
 | D10 | 2025-07-11 | Retro: Use Kyverno as a way to force to use the Harbor repository         | Really great way of doing policy-as-code                         |
+| D11 | 2025-12-31 | Implement Knative                                                         | Testing out Knative and actually get some code up and running.   |
+| D12 | 2025-12-31 | Fix coreDNS issue                                                         | Issues with Tailscale DNS                                        |
+| D13 | 2025-12-31 | Improve home media setup                                                  | Working JellyFin, Jellyseerr, Sonarr, etc.                       |

@@ -183,12 +183,85 @@ To add a new Helm chart to **core‑components** or **applications** and ensure 
 
 On the next Argo CD sync, the full chart directory is treated as plain YAML so every rendered manifest is applied exactly as you have in Git—letting you review diffs directly in Git and in Argo CD.
 
+## Serverless Functions with Knative
+
+Knative Serving provides a CNCF graduated, production-grade serverless platform on Kubernetes with advanced traffic management and auto-scaling capabilities.
+
+### Quick Start
+
+```bash
+# Install Knative CLI
+brew install knative/client/kn  # macOS
+
+# Get Kourier LoadBalancer IP
+export KOURIER_IP=$(kubectl get svc kourier -n kourier-system -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+# Deploy a function
+cd applications/functions/python-etl-example
+docker build -t docker.io/username/python-etl-example:v1 .
+docker push docker.io/username/python-etl-example:v1
+kubectl apply -f service.yaml
+
+# Test it
+SERVICE_HOST=$(kubectl get ksvc python-etl-example -o jsonpath='{.status.url}' | sed 's|http://||')
+curl -X POST http://$KOURIER_IP \
+  -H "Host: $SERVICE_HOST" \
+  -H "Content-Type: application/json" \
+  -d '{"test": "data"}'
+```
+
+### Development Workflow
+
+The key benefit of Knative is automatic scaling and revision management:
+
+```bash
+# 1. Make code changes
+vim handler.py
+
+# 2. Build and push
+docker build -t registry/function:v2 .
+docker push registry/function:v2
+
+# 3. Update service (creates new revision automatically)
+kn service update my-function --image registry/function:v2
+
+# 4. Test immediately (auto-scales from zero)
+curl -X POST http://$KOURIER_IP -H "Host: $SERVICE_HOST" -d '{"test": "data"}'
+```
+
+### Documentation
+
+- **Quick Start**: `applications/functions/QUICKSTART.md`
+- **Core Component**: `core-components/knative-serving/README.md`
+- **Examples**:
+  - Python ETL: `applications/functions/python-etl-example/`
+  - Go API Poller: `applications/functions/go-api-poller/`
+
+### Use Cases
+
+- ETL pipelines and data processing
+- API polling and monitoring
+- HTTP-triggered microservices
+- Event-driven applications
+- Scheduled jobs with scale-to-zero
+
+### Key Features
+
+- ✅ **CNCF Graduated**: Industry-standard serverless platform
+- ✅ **Scale-to-zero**: Automatically scale down to save resources
+- ✅ **Traffic splitting**: Blue/green and canary deployments
+- ✅ **Revision management**: Automatic versioning of deployments
+- ✅ **Auto-scaling**: Request-based autoscaling (KPA)
+- ✅ **Native K8s**: First-class Kubernetes integration
+
+---
+
 ## ArgoCD disabled internal TLS
 
 Disabled the internal TLS by doing a really beautiful thing, namely a `kubectl patch`. 
 
 ```
-kubectl -n argocd patch deployment argocd-server \                                                                                                                                  ─╯
+kubectl -n argocd patch deployment argocd-server \
   --type='json' \
   -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--insecure"}]'
 ```
