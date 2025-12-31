@@ -19,15 +19,19 @@ spec:
         kubernetes.io/hostname: node4
       containers:
         - name: jellyfin
-          image: lscr.io/linuxserver/jellyfin:latest
+          image: jellyfin/jellyfin:10.11.2
           ports:
-            - containerPort: 8096
+            - name: http
+              containerPort: 8096
+              protocol: TCP
           env:
             - name: TZ
               valueFrom:
                 configMapKeyRef:
                   name: media-common
                   key: TZ
+            - name: JELLYFIN_CACHE_DIR
+              value: /cache
           resources:
             requests:
               cpu: "1000m"
@@ -40,16 +44,29 @@ spec:
               mountPath: /config
             - name: media
               mountPath: /media
-            - name: jf-cache              
+            - name: jf-cache
               mountPath: /cache
+            - name: jf-cache
+              mountPath: /transcodes
+              subPath: transcodes
       volumes:
         - name: config
           persistentVolumeClaim:
             claimName: jellyfin-config
         - name: media
+<<<<<<< HEAD
           persistentVolumeClaim:
             claimName: media-rwx
         - name: jf-cache                 
+||||||| 267dbca
+          persistentVolumeClaim: { claimName: media-rwx }
+        - name: jf-cache                 
+=======
+          persistentVolumeClaim:
+            claimName: media-rwx
+        - name: jf-cache
+>>>>>>> ad40f6072ee1ccac41b097e6fb98964798201eda
           hostPath:
             path: /mnt/ssd/cache/jellyfin
             type: DirectoryOrCreate
+
