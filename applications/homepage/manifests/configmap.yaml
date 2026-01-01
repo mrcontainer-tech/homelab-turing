@@ -13,17 +13,41 @@ data:
     description: "Welcome to my self-hosted deathstar! 🚀"
     background:
       image: https://images.unsplash.com/photo-1502790671504-542ad42d5189?auto=format&fit=crop&w=2560&q=80
-      blur: sm 
+      blur: sm
       saturate: 50
       brightness: 50
       opacity: 50
     favicon: https://www.google.com/favicon.ico
     theme: dark
     color: slate
+    headerStyle: boxed
+    statusStyle: dot
+    showStats: true
+    quicklaunch:
+      searchDescriptions: true
+      hideInternetSearch: false
+      hideVisitURL: false
     layout:
+      Infrastructure:
+        style: row
+        columns: 2
+        tab: Core
+        icon: mdi-server-network
+      Security:
+        style: row
+        columns: 2
+        tab: Core
+        icon: mdi-shield-lock
+      Observability:
+        style: row
+        columns: 2
+        tab: Monitoring
+        icon: mdi-chart-line
       Media:
         style: row
         columns: 4
+        tab: Media
+        icon: mdi-television
   custom.css: ""
   custom.js: ""
   bookmarks.yaml: |
@@ -41,10 +65,10 @@ data:
             - abbr: GH
               href: https://github.com/
               icon: https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png
-        - ChatGPT:
-            - abbr: ChatGPT
-              href: https://chat.openai.com/
-              icon: https://cdn.oaistatic.com/assets/favicon-miwirzcw.ico
+        - Claude:
+            - abbr: Claude
+              href: https://claude.ai/
+              icon: https://claude.ai/images/claude_app_icon.png
         - Tweakers:
             - abbr: Tweakers
               href: https://tweakers.net/
@@ -55,92 +79,146 @@ data:
             href: https://argocd.mrcontainer.nl/
             description: GitOps ftw!
             icon: https://argocd.mrcontainer.nl/assets/favicon/favicon-32x32.png
+            ping: https://argocd.mrcontainer.nl
         - Longhorn:
             href: https://longhorn.mrcontainer.nl/
-            description: Longhorn is the best
+            description: Distributed block storage
             icon: http://longhorn.mrcontainer.nl/favicon.ico
+            ping: https://longhorn.mrcontainer.nl
+            widget:
+              type: longhorn
+              url: http://longhorn-frontend.longhorn-system.svc.cluster.local
     - Security:
         - Harbor:
             href: https://harbor.mrcontainer.nl/
-            description: TODO
+            description: Container registry
             icon: https://harbor.mrcontainer.nl/favicon.ico?v=2
+            ping: https://harbor.mrcontainer.nl
         - Kyverno:
             href: https://kyverno.mrcontainer.nl/
-            description: TODO
+            description: Policy engine
             icon: https://kyverno.mrcontainer.nl/icon.png
+            ping: https://kyverno.mrcontainer.nl
     - Observability:
         - Grafana:
             href: https://grafana.mrcontainer.nl/
-            description: Grafana UI
+            description: Metrics visualization
             icon: https://grafana.mrcontainer.nl/public/img/fav32.png
+            ping: https://grafana.mrcontainer.nl
         - Prometheus:
             href: https://prometheus.mrcontainer.nl/
-            description: Prometheus UI
+            description: Metrics & alerting
             icon: https://prometheus.mrcontainer.nl/favicon.svg
+            ping: https://prometheus.mrcontainer.nl
     - Media:
         - Jellyfin:
             href: https://jellyfin.mrcontainer.nl/
+            description: Media server
             icon: https://jellyfin.org/images/favicon.ico
+            ping: https://jellyfin.mrcontainer.nl
             widget:
               type: jellyfin
               url: http://jellyfin.media.svc.cluster.local:8096
               key: {{HOMEPAGE_VAR_JELLYFIN_API_KEY}}
         - Jellyseerr:
             href: https://jellyseerr.mrcontainer.nl/
+            description: Media requests
             icon: https://jellyseerr.mrcontainer.nl/favicon-32x32.png
+            ping: https://jellyseerr.mrcontainer.nl
             widget:
               type: jellyseerr
               url: http://jellyseerr.media.svc.cluster.local:5055
               key: {{HOMEPAGE_VAR_JELLYSEERR_API_KEY}}
         - Sonarr:
             href: https://sonarr.mrcontainer.nl/
+            description: TV show manager
             icon: https://sonarr.tv/img/favicon.ico
+            ping: https://sonarr.mrcontainer.nl
             widget:
               type: sonarr
               url: http://sonarr.media.svc.cluster.local:8989
               key: {{HOMEPAGE_VAR_SONARR_API_KEY}}
         - Prowlarr:
             href: https://prowlarr.mrcontainer.nl/
+            description: Indexer manager
             icon: https://prowlarr.com/img/favicon.ico
+            ping: https://prowlarr.mrcontainer.nl
             widget:
               type: prowlarr
               url: http://prowlarr.media.svc.cluster.local:9696
               key: {{HOMEPAGE_VAR_PROWLARR_API_KEY}}
         - Radarr:
             href: https://radarr.mrcontainer.nl/
+            description: Movie manager
             icon: https://radarr.mrcontainer.nl/Content/Images/Icons/favicon-32x32.png
+            ping: https://radarr.mrcontainer.nl
             widget:
               type: radarr
               url: https://radarr.mrcontainer.nl
               key: {{HOMEPAGE_VAR_RADARR_API_KEY}}
         - qBittorrent:
             href: https://qb.mrcontainer.nl/
+            description: Torrent client
             icon: https://qb.mrcontainer.nl/images/qbittorrent32.png
+            ping: https://qb.mrcontainer.nl
             widget:
               type: qbittorrent
               url: http://qbittorrent.media.svc.cluster.local:8080
               username: {{HOMEPAGE_VAR_QBITTORRENT_USERNAME}}
               password: {{HOMEPAGE_VAR_QBITTORRENT_PASSWORD}}
   widgets.yaml: |
+    - logo:
+        icon: https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png
+
+    - greeting:
+        text_size: xl
+        text: "Homelab Turing PI"
+
+    - datetime:
+        text_size: l
+        format:
+          dateStyle: short
+          timeStyle: short
+          hour12: false
+
+    - openmeteo:
+        label: Amsterdam
+        latitude: 52.37
+        longitude: 4.89
+        units: metric
+        timezone: Europe/Amsterdam
+        cache: 5
+
     - kubernetes:
         inCluster: true
         cluster:
           show: true
           cpu: true
           memory: true
-          showLabel: false
-          label: "cluster"
+          showLabel: true
+          label: "Turing Pi"
         nodes:
-          show: false
+          show: true
           cpu: true
           memory: true
           showLabel: true
+
     - resources:
         backend: resources
         expanded: true
         cpu: true
         memory: true
-        network: default
+        disk: /
+        cputemp: true
+        uptime: true
+
+    - longhorn:
+        expanded: true
+        total: true
+        labels: true
+        nodes: false
+        url: http://longhorn-frontend.longhorn-system.svc.cluster.local
+
     - search:
         provider: duckduckgo
         target: _blank
