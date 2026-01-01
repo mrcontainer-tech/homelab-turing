@@ -84,43 +84,43 @@ data:
             widget:
               type: jellyfin
               url: http://jellyfin.media.svc.cluster.local:8096
-              key: "32ffc16ba2384d55a5f041137dcf7c43"
+              key: {{HOMEPAGE_VAR_JELLYFIN_API_KEY}}
         - Jellyseerr:
             href: https://jellyseerr.mrcontainer.nl/
             icon: https://jellyseerr.mrcontainer.nl/favicon-32x32.png
             widget:
               type: jellyseerr
               url: http://jellyseerr.media.svc.cluster.local:5055
-              key: "MTc2MDc5OTY0NzY4OGExYTcxMDE2LWY1NjgtNGI4Mi04M2JlLTk5YzZkMmMwMWUxNg=="
+              key: {{HOMEPAGE_VAR_JELLYSEERR_API_KEY}}
         - Sonarr:
             href: https://sonarr.mrcontainer.nl/
             icon: https://sonarr.tv/img/favicon.ico
             widget:
               type: sonarr
               url: http://sonarr.media.svc.cluster.local:8989
-              key: "649d8c8e141349d4832988dccec8a187"
+              key: {{HOMEPAGE_VAR_SONARR_API_KEY}}
         - Prowlarr:
             href: https://prowlarr.mrcontainer.nl/
             icon: https://prowlarr.com/img/favicon.ico
             widget:
               type: prowlarr
               url: http://prowlarr.media.svc.cluster.local:9696
-              key: "fcc07f63cb964f17a63d73cf6fe92dc2"
+              key: {{HOMEPAGE_VAR_PROWLARR_API_KEY}}
         - Radarr:
             href: https://radarr.mrcontainer.nl/
             icon: https://radarr.mrcontainer.nl/Content/Images/Icons/favicon-32x32.png
             widget:
               type: radarr
               url: https://radarr.mrcontainer.nl
-              key: "afdd1ed69e80489bb5d26cc72499f76b"
+              key: {{HOMEPAGE_VAR_RADARR_API_KEY}}
         - qBittorrent:
             href: https://qb.mrcontainer.nl/
             icon: https://qb.mrcontainer.nl/images/qbittorrent32.png
             widget:
               type: qbittorrent
               url: http://qbittorrent.media.svc.cluster.local:8080
-              username: "admin"
-              password: "UIrzBDvyV"
+              username: {{HOMEPAGE_VAR_QBITTORRENT_USERNAME}}
+              password: {{HOMEPAGE_VAR_QBITTORRENT_PASSWORD}}
   widgets.yaml: |
     - kubernetes:
         inCluster: true
