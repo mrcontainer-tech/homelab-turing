@@ -5,3 +5,7 @@ metrics:
     interval: 30s
     additionalLabels:
       release: kube-prometheus-stack-chart
+
+persistence:
+  defaultClassReplicaCount: 1
+
