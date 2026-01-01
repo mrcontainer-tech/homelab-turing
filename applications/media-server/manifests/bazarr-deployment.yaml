@@ -18,6 +18,21 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/hostname: node4
+      initContainers:
+        - name: config-init
+          image: busybox:1.36
+          command: ['sh', '/scripts/init-config.sh', 'Bazarr', '$(BAZARR_API_KEY)']
+          env:
+            - name: BAZARR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: arr-apps-apikeys
+                  key: BAZARR_API_KEY
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: init-script
+              mountPath: /scripts
       containers:
         - name: bazarr
           image: lscr.io/linuxserver/bazarr:latest
@@ -64,3 +79,7 @@ spec:
         - name: media
           persistentVolumeClaim:
             claimName: media-rwx
+        - name: init-script
+          configMap:
+            name: arr-config-init-script
+            defaultMode: 0755

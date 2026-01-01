@@ -92,17 +92,17 @@ spec:
                   key: PGID
             - name: WEBUI_PORT
               value: "8080"
-            # Optional: set persistent WebUI credentials via a Secret (if created)
-            # - name: QBT_WEBUI_USERNAME
-            #   valueFrom:
-            #     secretKeyRef:
-            #       name: qb-webui-auth
-            #       key: QBT_WEBUI_USERNAME
-            # - name: QBT_WEBUI_PASSWORD_PBKDF2
-            #   valueFrom:
-            #     secretKeyRef:
-            #       name: qb-webui-auth
-            #       key: QBT_WEBUI_PASSWORD_PBKDF2
+            # Persistent WebUI credentials from Secret
+            - name: QBT_WEBUI_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: qbittorrent-webui-creds
+                  key: QBT_WEBUI_USERNAME
+            - name: QBT_WEBUI_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: qbittorrent-webui-creds
+                  key: QBT_WEBUI_PASSWORD
           ports:
             - name: webui
               containerPort: 8080

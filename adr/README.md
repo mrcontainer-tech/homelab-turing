@@ -19,3 +19,4 @@ A concise, lightweight decision log inspired by Architectural Decision Records (
 | D11 | 2025-12-31 | Implement Knative                                                         | Testing out Knative and actually get some code up and running.   |
 | D12 | 2025-12-31 | Fix coreDNS issue                                                         | Issues with Tailscale DNS                                        |
 | D13 | 2025-12-31 | Improve home media setup                                                  | Working JellyFin, Jellyseerr, Sonarr, etc.                       |
+| D14 | 2026-01-01 | Media app credentials managed manually, not committed to Git             | Created `-creds.yaml` files (gitignored) with init containers for API key persistence. Applied manually via kubectl until external-secrets backend is configured. |
