@@ -1,8 +1,0 @@
-kind: Namespace
-apiVersion: v1
-metadata:
-  name: mariadb
-  labels:
-    app.kubernetes.io/name: mariadb
-  annotations:
-    argocd.argoproj.io/sync-options: Prune=false
