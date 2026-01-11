@@ -89,16 +89,16 @@ data:
               type: longhorn
               url: http://longhorn-frontend.longhorn-system.svc.cluster.local
     - Security:
-        # TODO: Enable Harbor ping when service is deployed
+        # TODO: Enable Harbor ping and icon when service is deployed
         - Harbor:
             href: https://harbor.mrcontainer.nl/
             description: Container registry
-            icon: https://harbor.mrcontainer.nl/favicon.ico?v=2
-        # TODO: Enable Kyverno ping when service is deployed
+            icon: mdi-docker
+        # TODO: Enable Kyverno ping and icon when service is deployed
         - Kyverno:
             href: https://kyverno.mrcontainer.nl/
             description: Policy engine
-            icon: https://kyverno.mrcontainer.nl/icon.png
+            icon: mdi-shield-check
     - Observability:
         - Grafana:
             href: https://grafana.mrcontainer.nl/
@@ -211,13 +211,6 @@ data:
         disk: /
         cputemp: true
         uptime: true
-
-    - longhorn:
-        expanded: true
-        total: true
-        labels: true
-        nodes: false
-        url: http://longhorn-frontend.longhorn-system.svc.cluster.local
 
     - search:
         provider: duckduckgo
