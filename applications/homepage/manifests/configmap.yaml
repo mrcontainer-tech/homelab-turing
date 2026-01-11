@@ -87,7 +87,7 @@ data:
             ping: https://longhorn.mrcontainer.nl
             widget:
               type: longhorn
-              url: http://longhorn-frontend.longhorn-system.svc.cluster.local
+              url: https://longhorn.mrcontainer.nl
     - Security:
         - Harbor:
             href: https://harbor.mrcontainer.nl/
