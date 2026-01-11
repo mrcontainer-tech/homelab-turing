@@ -104,7 +104,7 @@ data:
             href: https://grafana.mrcontainer.nl/
             description: Metrics visualization
             icon: https://grafana.mrcontainer.nl/public/img/fav32.png
-            ping: http://kube-prometheus-stack-grafana.kube-prometheus-stack.svc.cluster.local
+            ping: http://kube-prometheus-stack-chart-grafana.kube-prometheus-stack.svc.cluster.local
         - Prometheus:
             href: https://prometheus.mrcontainer.nl/
             description: Metrics & alerting
