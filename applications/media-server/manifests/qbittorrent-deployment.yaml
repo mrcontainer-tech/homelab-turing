@@ -73,7 +73,7 @@ spec:
             failureThreshold: 6
 
         - name: qbittorrent
-          image: lscr.io/linuxserver/qbittorrent:latest
+          image: lscr.io/linuxserver/qbittorrent:5.1.4
           env:
             - name: TZ
               valueFrom:
