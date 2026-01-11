@@ -35,7 +35,7 @@ spec:
               mountPath: /scripts
       containers:
         - name: prowlarr
-          image: lscr.io/linuxserver/prowlarr:latest
+          image: lscr.io/linuxserver/prowlarr:2.3.0.5236-ls134
           ports:
             - containerPort: 9696
           env:
