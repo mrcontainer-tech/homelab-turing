@@ -82,12 +82,12 @@ data:
             href: https://argocd.mrcontainer.nl/
             description: GitOps ftw!
             icon: https://argocd.mrcontainer.nl/assets/favicon/favicon-32x32.png
-            ping: http://argocd-server.argocd.svc.cluster.local
+            siteMonitor: https://argocd.mrcontainer.nl/
         - Longhorn:
             href: https://longhorn.mrcontainer.nl/
             description: Distributed block storage
             icon: http://longhorn.mrcontainer.nl/favicon.ico
-            ping: http://longhorn-frontend.longhorn-system.svc.cluster.local
+            siteMonitor: https://longhorn.mrcontainer.nl/
     - Security:
         # TODO: Enable Harbor ping and icon when service is deployed
         - Harbor:
@@ -115,7 +115,7 @@ data:
             href: https://jellyfin.mrcontainer.nl/
             description: Media server
             icon: https://jellyfin.org/images/favicon.ico
-            ping: http://jellyfin.media.svc.cluster.local:8096
+            siteMonitor: https://jellyfin.mrcontainer.nl/
             widget:
               type: jellyfin
               url: http://jellyfin.media.svc.cluster.local:8096
@@ -124,7 +124,7 @@ data:
             href: https://jellyseerr.mrcontainer.nl/
             description: Media requests
             icon: https://jellyseerr.mrcontainer.nl/favicon-32x32.png
-            ping: http://jellyseerr.media.svc.cluster.local:5055
+            siteMonitor: https://jellyseerr.mrcontainer.nl/
             widget:
               type: jellyseerr
               url: http://jellyseerr.media.svc.cluster.local:5055
@@ -133,7 +133,7 @@ data:
             href: https://sonarr.mrcontainer.nl/
             description: TV show manager
             icon: https://sonarr.tv/img/favicon.ico
-            ping: http://sonarr.media.svc.cluster.local:8989
+            siteMonitor: https://sonarr.mrcontainer.nl/
             widget:
               type: sonarr
               url: http://sonarr.media.svc.cluster.local:8989
@@ -142,7 +142,7 @@ data:
             href: https://prowlarr.mrcontainer.nl/
             description: Indexer manager
             icon: https://prowlarr.com/img/favicon.ico
-            ping: http://prowlarr.media.svc.cluster.local:9696
+            siteMonitor: https://prowlarr.mrcontainer.nl/
             widget:
               type: prowlarr
               url: http://prowlarr.media.svc.cluster.local:9696
@@ -151,7 +151,7 @@ data:
             href: https://radarr.mrcontainer.nl/
             description: Movie manager
             icon: https://radarr.mrcontainer.nl/Content/Images/Icons/favicon-32x32.png
-            ping: http://radarr.media.svc.cluster.local:7878
+            siteMonitor: https://radarr.mrcontainer.nl/
             widget:
               type: radarr
               url: http://radarr.media.svc.cluster.local:7878
@@ -160,7 +160,7 @@ data:
             href: https://qb.mrcontainer.nl/
             description: Torrent client
             icon: https://qb.mrcontainer.nl/images/qbittorrent32.png
-            ping: http://qbittorrent.media.svc.cluster.local:8080
+            siteMonitor: https://qb.mrcontainer.nl/
             widget:
               type: qbittorrent
               url: http://qbittorrent.media.svc.cluster.local:8080
