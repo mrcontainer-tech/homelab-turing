@@ -104,7 +104,7 @@ data:
             href: https://grafana.mrcontainer.nl/
             description: Metrics visualization
             icon: https://grafana.mrcontainer.nl/public/img/fav32.png
-            ping: http://kube-prometheus-stack-chart-grafana.kube-prometheus-stack.svc.cluster.local
+            siteMonitor: https://grafana.mrcontainer.nl/
         - Prometheus:
             href: https://prometheus.mrcontainer.nl/
             description: Metrics & alerting
@@ -167,11 +167,8 @@ data:
               username: {{HOMEPAGE_VAR_QBITTORRENT_USERNAME}}
               password: {{HOMEPAGE_VAR_QBITTORRENT_PASSWORD}}
   widgets.yaml: |
-    - logo:
-        icon: https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png
-
     - greeting:
-        text_size: xl
+        text_size: l
         text: "Homelab Turing PI"
 
     - datetime:
@@ -182,9 +179,9 @@ data:
           hour12: false
 
     - openmeteo:
-        label: Amsterdam
+        label: Almere
         latitude: 52.37
-        longitude: 4.89
+        longitude: 5.22
         units: metric
         timezone: Europe/Amsterdam
         cache: 5
@@ -196,7 +193,7 @@ data:
           cpu: true
           memory: true
           showLabel: true
-          label: "Turing Pi"
+          label: "Cluster"
         nodes:
           show: true
           cpu: true
@@ -217,8 +214,4 @@ data:
         total: true
         labels: true
         nodes: false
-
-    - search:
-        provider: duckduckgo
-        target: _blank
   docker.yaml: ""
