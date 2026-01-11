@@ -48,6 +48,9 @@ data:
         columns: 4
         tab: Media
         icon: mdi-television
+    providers:
+      longhorn:
+        url: http://longhorn-frontend.longhorn-system.svc.cluster.local
   custom.css: ""
   custom.js: ""
   bookmarks.yaml: |
@@ -85,9 +88,6 @@ data:
             description: Distributed block storage
             icon: http://longhorn.mrcontainer.nl/favicon.ico
             ping: http://longhorn-frontend.longhorn-system.svc.cluster.local
-            widget:
-              type: longhorn
-              url: http://longhorn-frontend.longhorn-system.svc.cluster.local
     - Security:
         # TODO: Enable Harbor ping and icon when service is deployed
         - Harbor:
@@ -211,6 +211,12 @@ data:
         disk: /
         cputemp: true
         uptime: true
+
+    - longhorn:
+        expanded: true
+        total: true
+        labels: true
+        nodes: false
 
     - search:
         provider: duckduckgo
