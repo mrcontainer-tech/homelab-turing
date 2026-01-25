@@ -1,12 +1,12 @@
 # CLAUDE.md - AI Assistant Guide
 
-This document helps AI assistants (like Claude) understand how to work effectively with this homelab-turing project.
+This document helps AI assistants (like Claude) understand how to work effectively with this homelab-turing project. To enhance my dev workflow with AI tools I created this document.
 
 ## Project Context
 
 This is a **GitOps-managed Kubernetes homelab** running on a Turing Pi v2.5 with 4 Raspberry Pi CM4s. The cluster is managed declaratively through ArgoCD, with all configuration stored in this Git repository as the single source of truth.
 
-**Key Philosophy**: This is an over-engineered playground for learning and experimentation. It showcases CNCF ecosystem tools and Kubernetes patterns.
+**Key Philosophy**: This is an engineering playground for learning and experimentation. It showcases CNCF ecosystem tools and Kubernetes patterns. This helps me with tinkering and trying out new things.
 
 ---
 

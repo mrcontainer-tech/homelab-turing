@@ -3,6 +3,62 @@
 Plain-manifests home-media stack (Jellyfin, Jellyseerr, Sonarr, Radarr, Prowlarr, qBittorrent, Bazarr) delivered via **Argo CD ApplicationSet**.
 Large RWX data lives on the SSD of `node4` (`/mnt/ssd`); per-app configs use Longhorn PVCs (RWO).
 
+## Architecture diagram
+
+```
+                              END USER
+                                 │
+                 ┌───────────────┴───────────────┐
+                 │                               │
+                 ▼                               ▼
+         ┌──────────────┐               ┌──────────────┐
+         │   Jellyfin   │◄──────────────│  Jellyseerr  │
+         │  (streaming) │   libraries   │  (requests)  │
+         └──────────────┘               └──────────────┘
+                 ▲                        │         │
+                 │                        │         │
+                 │ media files            ▼         ▼
+                 │                 ┌─────────┐ ┌─────────┐
+                 │                 │  Radarr │ │  Sonarr │
+                 │                 │ (movies)│ │  (tv)   │
+                 │                 └────┬────┘ └────┬────┘
+                 │                      │     ▲     │
+    ┌────────────┴────────────┐         │     │     │
+    │                         │         │  indexers │
+    │   /mnt/ssd/media/       │◄────────┤     │     ├───────┐
+    │   ├── movies/           │  moves  │ ┌───┴───┐ │       │
+    │   └── tv/               │  files  │ │Prowlarr││       │
+    │                         │         │ └───────┘ │       │
+    │   /mnt/ssd/downloads/   │◄────────┼───────────┼───────┤
+    │                         │         │           │       │
+    └─────────────────────────┘         │  torrents │       │
+                                        ▼           ▼       │
+    ┌─────────┐                  ┌─────────────────────┐    │
+    │  Bazarr │── subtitles ───► │ qBittorrent Pod     │    │
+    │  (subs) │  for media       │ ┌─────────────────┐ │    │
+    └─────────┘                  │ │   qBittorrent   │ │    │
+                                 │ │   (downloads)   │ │    │
+                                 │ ├─────────────────┤ │    │
+                                 │ │     Gluetun     │ │    │
+                                 │ │   (VPN sidecar) │ │    │
+                                 │ └────────┬────────┘ │    │
+                                 └──────────┼──────────┘    │
+                                            │               │
+                                            ▼               │
+                                        Internet ◄──────────┘
+                                     (via VPN tunnel)
+```
+
+**User flow:**
+1. **Request content** → User browses Jellyseerr, requests a movie or TV show
+2. **Route to arr** → Jellyseerr sends request to Radarr (movies) or Sonarr (TV)
+3. **Search indexers** → Radarr/Sonarr search using indexers synced from Prowlarr
+4. **Send torrent** → Radarr/Sonarr send torrent to qBittorrent
+5. **Download** → qBittorrent downloads via Gluetun VPN tunnel
+6. **Organize** → Radarr/Sonarr move completed files to `/mnt/ssd/media/`
+7. **Subtitles** → Bazarr fetches subtitles for the media
+8. **Watch** → User streams content via Jellyfin
+
 ## Repository layout
 
 ```
