@@ -1,0 +1,67 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dnscrypt-proxy
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: dnscrypt-proxy
+    app.kubernetes.io/component: dns
+data:
+  dnscrypt-proxy.toml: |
+    # Listen on all interfaces, port 5053
+    listen_addresses = ['0.0.0.0:5053']
+
+    # Maximum concurrent client connections
+    max_clients = 250
+
+    # Enable DoH and DNSCrypt protocols
+    dnscrypt_servers = true
+    doh_servers = true
+
+    # Require servers that don't log and don't filter
+    require_dnssec = false
+    require_nolog = true
+    require_nofilter = true
+
+    # Disable IPv6 (simplifies Raspberry Pi networking)
+    ipv6_servers = false
+    block_ipv6 = false
+
+    # DNS cache settings
+    cache = true
+    cache_size = 4096
+    cache_min_ttl = 2400
+    cache_max_ttl = 86400
+    cache_neg_min_ttl = 60
+    cache_neg_max_ttl = 600
+
+    # Timeout settings
+    timeout = 5000
+    keepalive = 30
+
+    # Bootstrap resolvers (used only for initial resolution of DoH hostnames)
+    bootstrap_resolvers = ['9.9.9.11:53', '8.8.8.8:53']
+    ignore_system_dns = true
+
+    # Network timeout for startup
+    netprobe_timeout = 60
+    netprobe_address = '9.9.9.9:53'
+
+    # Load balancing: p2 (power-of-two) for optimal server selection
+    lb_strategy = 'p2'
+    lb_estimator = true
+
+    # Logging (minimal for resource efficiency)
+    log_level = 2
+    log_file = '/dev/null'
+    use_syslog = false
+
+    # Download server lists from public-resolvers
+    [sources]
+      [sources.public-resolvers]
+        urls = ['https://raw.githubusercontent.com/DNSCrypt/dnscrypt-resolvers/master/v3/public-resolvers.md', 'https://download.dnscrypt.info/resolvers-list/v3/public-resolvers.md']
+        cache_file = '/tmp/public-resolvers.md'
+        minisign_key = 'RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3'
+        refresh_delay = 72
+        prefix = ''

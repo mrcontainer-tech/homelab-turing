@@ -1,0 +1,101 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dnscrypt-proxy
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: dnscrypt-proxy
+    app.kubernetes.io/component: dns
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: dnscrypt-proxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: dnscrypt-proxy
+    spec:
+      # Spread pods across nodes for HA
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: dnscrypt-proxy
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: dnscrypt-proxy
+          image: klutchell/dnscrypt-proxy:2.1.5
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: dns-udp
+              containerPort: 5053
+              protocol: UDP
+            - name: dns-tcp
+              containerPort: 5053
+              protocol: TCP
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "25m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+          livenessProbe:
+            exec:
+              command:
+                - dnsprobe
+                - google.com
+                - "127.0.0.1:5053"
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - dnsprobe
+                - google.com
+                - "127.0.0.1:5053"
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+          volumeMounts:
+            - name: config
+              mountPath: /config/dnscrypt-proxy.toml
+              subPath: dnscrypt-proxy.toml
+              readOnly: true
+            - name: cache
+              mountPath: /tmp
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: config
+          configMap:
+            name: dnscrypt-proxy
+        - name: cache
+          emptyDir:
+            sizeLimit: 50Mi
+      # Avoid circular dependency - use external DNS for DoH hostname resolution
+      dnsPolicy: "None"
+      dnsConfig:
+        nameservers:
+          - "9.9.9.9"
+          - "8.8.8.8"
