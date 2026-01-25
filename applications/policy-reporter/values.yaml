@@ -1,0 +1,26 @@
+# Policy Reporter values for homelab
+# Chart: policy-reporter/policy-reporter v3.7.1
+# App: Policy Reporter v3.7.0
+
+# Core policy-reporter
+resources:
+  limits:
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+# Enable the UI
+ui:
+  enabled: true
+
+  resources:
+    limits:
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+  service:
+    type: ClusterIP
+    port: 8080

@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: policy-reporter
+  namespace: policy-reporter
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  tls:
+    - hosts:
+        - policy-reporter.mrcontainer.nl
+      secretName: policy-reporter-tls
+  rules:
+    - host: policy-reporter.mrcontainer.nl
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: policy-reporter-ui
+                port:
+                  number: 8080

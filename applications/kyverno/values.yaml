@@ -1,0 +1,51 @@
+# Kyverno values for homelab
+# Chart: kyverno/kyverno v3.6.2
+# App: Kyverno v1.16.2
+
+# Install CRDs with the chart
+crds:
+  install: true
+
+# Admission controller settings
+admissionController:
+  replicas: 1
+
+  resources:
+    limits:
+      memory: 384Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Background controller settings
+backgroundController:
+  replicas: 1
+
+  resources:
+    limits:
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 64Mi
+
+# Cleanup controller settings
+cleanupController:
+  replicas: 1
+
+  resources:
+    limits:
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 64Mi
+
+# Reports controller settings
+reportsController:
+  replicas: 1
+
+  resources:
+    limits:
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 64Mi
