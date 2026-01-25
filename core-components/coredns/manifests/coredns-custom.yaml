@@ -22,7 +22,10 @@ data:
           fallthrough
         }
         prometheus :9153
-        forward . 192.168.68.1 8.8.8.8 1.1.1.1
+        forward . dnscrypt-proxy.kube-system.svc.cluster.local {
+          policy round_robin
+          health_check 5s
+        }
         cache 30
         loop
         reload

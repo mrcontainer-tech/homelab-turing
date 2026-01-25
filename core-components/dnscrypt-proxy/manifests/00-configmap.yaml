@@ -52,9 +52,9 @@ data:
     lb_strategy = 'p2'
     lb_estimator = true
 
-    # Logging (minimal for resource efficiency)
+    # Logging to stdout for kubectl logs visibility
     log_level = 2
-    log_file = '/dev/null'
+    log_file = '/dev/stdout'
     use_syslog = false
 
     # Download server lists from public-resolvers
