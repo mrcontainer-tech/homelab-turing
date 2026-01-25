@@ -1,8 +1,8 @@
-{{- if .Values.metrics.enabled}}
+{{- if eq .Values.database.type "internal" -}}
 apiVersion: v1
 kind: Service
 metadata:
-  name: "{{ template "harbor.exporter" . }}"
+  name: "{{ template "harbor.database" . }}"
   namespace: {{ .Release.Namespace | quote }}
   labels:
 {{ include "harbor.labels" . | indent 4 }}
@@ -14,9 +14,8 @@ spec:
   ipFamilies: {{ toYaml .Values.ipFamily.families | nindent 4 }}
 {{- end }}
   ports:
-    - name: {{ template "harbor.metricsPortName" . }}
-      port: {{ .Values.metrics.exporter.port }}
+    - port: 5432
   selector:
 {{ include "harbor.matchLabels" . | indent 4 }}
-    component: exporter
-{{ end }}
+    component: database
+{{- end -}}

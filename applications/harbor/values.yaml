@@ -1,32 +1,35 @@
-# Harbor values for node5 (AMD64)
+# Harbor values for official goharbor chart on node5 (AMD64)
+# Chart: harbor/harbor v1.18.1
+# App: Harbor v2.14.1
+
 externalURL: https://harbor.mrcontainer.nl
 
-exposureType: proxy
-service:
-  type: ClusterIP
+# Use ClusterIP with custom ingress (managed separately via cert-manager)
+expose:
+  type: clusterIP
+  tls:
+    enabled: false  # TLS termination handled by Traefik ingress
+  clusterIP:
+    name: harbor
+    ports:
+      httpPort: 80
+      httpsPort: 443
 
-# Disable chart-owned Ingress (using custom manifest)
-ingress:
-  enabled: false
-  core:
-    enabled: false
-  portal:
-    enabled: false
+# Persistence using Longhorn
+persistence:
+  enabled: true
+  resourcePolicy: "keep"
+  persistentVolumeClaim:
+    registry:
+      storageClass: "longhorn"
+      size: 10Gi
+    jobservice:
+      jobLog:
+        storageClass: "longhorn"
+        size: 1Gi
 
-# Scale down for resource constraints
-registry:
-  relativeurls: true
-  replicaCount: 1
-  nodeSelector:
-    kubernetes.io/hostname: node5
-
-jobservice:
-  replicaCount: 1
-  nodeSelector:
-    kubernetes.io/hostname: node5
-
+# All components scheduled on node5 (AMD64)
 portal:
-  replicaCount: 1
   nodeSelector:
     kubernetes.io/hostname: node5
 
@@ -34,13 +37,16 @@ core:
   nodeSelector:
     kubernetes.io/hostname: node5
 
-nginx:
-  tls:
-    enabled: false
+jobservice:
+  nodeSelector:
+    kubernetes.io/hostname: node5
+
+registry:
   nodeSelector:
     kubernetes.io/hostname: node5
 
 trivy:
+  enabled: true
   nodeSelector:
     kubernetes.io/hostname: node5
 
@@ -48,13 +54,21 @@ exporter:
   nodeSelector:
     kubernetes.io/hostname: node5
 
-# Database components on node5
-postgresql:
-  primary:
+nginx:
+  nodeSelector:
+    kubernetes.io/hostname: node5
+
+# Internal database on node5
+database:
+  type: internal
+  internal:
     nodeSelector:
       kubernetes.io/hostname: node5
+    password: "changeit"  # TODO: Use external-secrets
 
+# Internal Redis on node5
 redis:
-  master:
+  type: internal
+  internal:
     nodeSelector:
       kubernetes.io/hostname: node5

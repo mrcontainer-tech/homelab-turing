@@ -1,9 +1,11 @@
-# harbor-chart-portal
+# Harbor Ingress - Official goharbor chart
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: harbor-ingress
   namespace: harbor
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   tls:
     - hosts:
@@ -17,6 +19,6 @@ spec:
             path: /
             backend:
               service:
-                name: harbor-chart
+                name: harbor
                 port:
                   number: 80

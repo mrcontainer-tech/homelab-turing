@@ -1,35 +1,330 @@
-{{/*
-Copyright Broadcom, Inc. All Rights Reserved.
-SPDX-License-Identifier: APACHE-2.0
-*/}}
-
 {{/* vim: set filetype=mustache: */}}
-
 {{/*
-Set the http prefix if the externalURl doesn't have it
+Expand the name of the chart.
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
-{{- define "harbor.externalUrl" -}}
-{{- $templatedExternalUrl := tpl .Values.externalURL . -}}
-{{- if hasPrefix "http" $templatedExternalUrl -}}
-    {{- print $templatedExternalUrl -}}
-{{- else -}}
-    {{- printf "%s://%s" (ternary "https" "http" (or (and (eq .Values.exposureType "proxy") .Values.nginx.tls.enabled) (and (eq .Values.exposureType "ingress") .Values.ingress.core.tls))) $templatedExternalUrl -}}
-{{- end -}}
+{{- define "harbor.name" -}}
+{{- default "harbor" .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
-Return true if the NGINX TLS certs should be auto-generated
+Create a default fully qualified app name.
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+If release name contains chart name it will be used as a full name.
 */}}
+{{- define "harbor.fullname" -}}
+{{- if .Values.fullnameOverride }}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- $name := default "harbor" .Values.nameOverride }}
+{{- if contains $name .Release.Name }}
+{{- .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/* Helm required labels: legacy */}}
+{{- define "harbor.legacy.labels" -}}
+heritage: {{ .Release.Service }}
+release: {{ .Release.Name }}
+chart: {{ .Chart.Name }}
+app: "{{ template "harbor.name" . }}"
+{{- end -}}
+
+{{/* Helm required labels */}}
+{{- define "harbor.labels" -}}
+heritage: {{ .Release.Service }}
+release: {{ .Release.Name }}
+chart: {{ .Chart.Name }}
+app: "{{ template "harbor.name" . }}"
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/name: {{ include "harbor.name" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/part-of: {{ include "harbor.name" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+{{- end -}}
+
+{{/* matchLabels */}}
+{{- define "harbor.matchLabels" -}}
+release: {{ .Release.Name }}
+app: "{{ template "harbor.name" . }}"
+{{- end -}}
+
+{{/* Helper for printing values from existing secrets*/}}
+{{- define "harbor.secretKeyHelper" -}}
+  {{- if and (not (empty .data)) (hasKey .data .key) }}
+    {{- index .data .key | b64dec -}}
+  {{- end -}}
+{{- end -}}
+
+{{- define "harbor.autoGenCert" -}}
+  {{- if and .Values.expose.tls.enabled (eq .Values.expose.tls.certSource "auto") -}}
+    {{- printf "true" -}}
+  {{- else -}}
+    {{- printf "false" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- define "harbor.autoGenCertForIngress" -}}
+  {{- if and (eq (include "harbor.autoGenCert" .) "true") (eq .Values.expose.type "ingress") -}}
+    {{- printf "true" -}}
+  {{- else -}}
+    {{- printf "false" -}}
+  {{- end -}}
+{{- end -}}
+
 {{- define "harbor.autoGenCertForNginx" -}}
-{{- if and (eq .Values.exposureType "proxy") .Values.nginx.tls.enabled (not .Values.nginx.tls.existingSecret) -}}
-    {{- true -}}
+  {{- if and (eq (include "harbor.autoGenCert" .) "true") (ne .Values.expose.type "ingress") -}}
+    {{- printf "true" -}}
+  {{- else -}}
+    {{- printf "false" -}}
+  {{- end -}}
 {{- end -}}
+
+{{- define "harbor.database.host" -}}
+  {{- if eq .Values.database.type "internal" -}}
+    {{- template "harbor.database" . }}
+  {{- else -}}
+    {{- .Values.database.external.host -}}
+  {{- end -}}
+{{- end -}}
+
+{{- define "harbor.database.port" -}}
+  {{- if eq .Values.database.type "internal" -}}
+    {{- printf "%s" "5432" -}}
+  {{- else -}}
+    {{- .Values.database.external.port -}}
+  {{- end -}}
+{{- end -}}
+
+{{- define "harbor.database.username" -}}
+  {{- if eq .Values.database.type "internal" -}}
+    {{- printf "%s" "postgres" -}}
+  {{- else -}}
+    {{- .Values.database.external.username -}}
+  {{- end -}}
+{{- end -}}
+
+{{- define "harbor.database.rawPassword" -}}
+  {{- if eq .Values.database.type "internal" -}}
+    {{- $existingSecret := lookup "v1" "Secret" .Release.Namespace (include "harbor.database" .) -}}
+    {{- if and (not (empty $existingSecret)) (hasKey $existingSecret.data "POSTGRES_PASSWORD") -}}
+      {{- .Values.database.internal.password | default (index $existingSecret.data "POSTGRES_PASSWORD" | b64dec) -}}
+    {{- else -}}
+      {{- .Values.database.internal.password -}}
+    {{- end -}}
+  {{- else -}}
+    {{- .Values.database.external.password -}}
+  {{- end -}}
+{{- end -}}
+
+{{- define "harbor.database.escapedRawPassword" -}}
+  {{- include "harbor.database.rawPassword" . | urlquery | replace "+" "%20" -}}
+{{- end -}}
+
+{{- define "harbor.database.encryptedPassword" -}}
+  {{- include "harbor.database.rawPassword" . | b64enc | quote -}}
+{{- end -}}
+
+{{- define "harbor.database.coreDatabase" -}}
+  {{- if eq .Values.database.type "internal" -}}
+    {{- printf "%s" "registry" -}}
+  {{- else -}}
+    {{- .Values.database.external.coreDatabase -}}
+  {{- end -}}
+{{- end -}}
+
+{{- define "harbor.database.sslmode" -}}
+  {{- if eq .Values.database.type "internal" -}}
+    {{- printf "%s" "disable" -}}
+  {{- else -}}
+    {{- .Values.database.external.sslmode -}}
+  {{- end -}}
+{{- end -}}
+
+{{- define "harbor.redis.scheme" -}}
+  {{- with .Values.redis }}
+    {{- if eq .type "external" -}}
+      {{- if not (not .external.sentinelMasterSet) -}}
+        {{- ternary "rediss+sentinel" "redis+sentinel" (.external.tlsOptions.enable) }}
+      {{- else -}}
+        {{- ternary "rediss" "redis" (.external.tlsOptions.enable) }}
+      {{- end -}}
+    {{- else -}}
+      {{ print "redis" }}
+    {{- end -}}
+  {{- end }}
+{{- end -}}
+
+{{- define "harbor.redis.enableTLS" -}}
+  {{- with .Values.redis }}
+    {{- ternary "true" "false" (and ( eq .type "external") (.external.tlsOptions.enable)) }}
+  {{- end }}
+{{- end -}}
+
+/*host:port*/
+{{- define "harbor.redis.addr" -}}
+  {{- with .Values.redis }}
+    {{- ternary (printf "%s:6379" (include "harbor.redis" $ )) .external.addr (eq .type "internal") }}
+  {{- end }}
+{{- end -}}
+
+{{- define "harbor.redis.masterSet" -}}
+  {{- with .Values.redis }}
+    {{- ternary .external.sentinelMasterSet "" (contains "+sentinel" (include "harbor.redis.scheme" $)) }}
+  {{- end }}
+{{- end -}}
+
+{{- define "harbor.redis.password" -}}
+  {{- with .Values.redis }}
+    {{- ternary "" .external.password (eq .type "internal") }}
+  {{- end }}
+{{- end -}}
+
+
+{{- define "harbor.redis.usernamefromsecret" -}}
+  {{- $existingSecret := (lookup "v1" "Secret"  .Release.Namespace (.Values.redis.external.existingSecret)) -}}
+  {{- if and (not (empty $existingSecret)) (hasKey $existingSecret.data "REDIS_USERNAME") -}}
+    {{- printf "%s" ($existingSecret.data.REDIS_USERNAME | b64dec | trim ) }}
+  {{- end -}}
+{{- end -}}
+
+{{- define "harbor.redis.pwdfromsecret" -}}
+  {{- (lookup "v1" "Secret"  .Release.Namespace (.Values.redis.external.existingSecret)).data.REDIS_PASSWORD  | b64dec }}
+{{- end -}}
+
+{{- define "harbor.redis.cred" -}}
+  {{- with .Values.redis }}
+    {{- if (and (eq .type "external" ) (.external.existingSecret)) }}
+      {{- printf "%s:%s@" (include "harbor.redis.usernamefromsecret" $) (include "harbor.redis.pwdfromsecret" $) -}}
+    {{- else }}
+      {{- ternary (printf "%s:%s@" (.external.username | urlquery) (.external.password | urlquery)) "" (and (eq .type "external" ) (not (not .external.password))) }}
+    {{- end }}
+  {{- end }}
+{{- end -}}
+
+/*scheme://[:password@]host:port[/master_set]*/
+{{- define "harbor.redis.url" -}}
+  {{- with .Values.redis }}
+    {{- $path := ternary "" (printf "/%s" (include "harbor.redis.masterSet" $)) (not (include "harbor.redis.masterSet" $)) }}
+    {{- printf "%s://%s%s%s" (include "harbor.redis.scheme" $) (include "harbor.redis.cred" $) (include "harbor.redis.addr" $) $path -}}
+  {{- end }}
+{{- end -}}
+
+/*scheme://[:password@]addr/db_index?idle_timeout_seconds=30*/
+{{- define "harbor.redis.urlForCore" -}}
+  {{- with .Values.redis }}
+    {{- $index := ternary "0" .external.coreDatabaseIndex (eq .type "internal") }}
+    {{- printf "%s/%s?idle_timeout_seconds=30" (include "harbor.redis.url" $) $index -}}
+  {{- end }}
+{{- end -}}
+
+/*scheme://[:password@]addr/db_index*/
+{{- define "harbor.redis.urlForJobservice" -}}
+  {{- with .Values.redis }}
+    {{- $index := ternary .internal.jobserviceDatabaseIndex .external.jobserviceDatabaseIndex (eq .type "internal") }}
+    {{- printf "%s/%s" (include "harbor.redis.url" $) $index -}}
+  {{- end }}
+{{- end -}}
+
+/*scheme://[:password@]addr/db_index?idle_timeout_seconds=30*/
+{{- define "harbor.redis.urlForRegistry" -}}
+  {{- with .Values.redis }}
+    {{- $index := ternary .internal.registryDatabaseIndex .external.registryDatabaseIndex (eq .type "internal") }}
+    {{- printf "%s/%s?idle_timeout_seconds=30" (include "harbor.redis.url" $) $index -}}
+  {{- end }}
+{{- end -}}
+
+/*scheme://[:password@]addr/db_index?idle_timeout_seconds=30*/
+{{- define "harbor.redis.urlForTrivy" -}}
+  {{- with .Values.redis }}
+    {{- $index := ternary .internal.trivyAdapterIndex .external.trivyAdapterIndex (eq .type "internal") }}
+    {{- printf "%s/%s?idle_timeout_seconds=30" (include "harbor.redis.url" $) $index -}}
+  {{- end }}
+{{- end -}}
+
+/*scheme://[:password@]addr/db_index?idle_timeout_seconds=30*/
+{{- define "harbor.redis.urlForHarbor" -}}
+  {{- with .Values.redis }}
+    {{- $index := ternary .internal.harborDatabaseIndex .external.harborDatabaseIndex (eq .type "internal") }}
+    {{- printf "%s/%s?idle_timeout_seconds=30" (include "harbor.redis.url" $) $index -}}
+  {{- end }}
+{{- end -}}
+
+/*scheme://[:password@]addr/db_index?idle_timeout_seconds=30*/
+{{- define "harbor.redis.urlForCache" -}}
+  {{- with .Values.redis }}
+    {{- $index := ternary .internal.cacheLayerDatabaseIndex .external.cacheLayerDatabaseIndex (eq .type "internal") }}
+    {{- printf "%s/%s?idle_timeout_seconds=30" (include "harbor.redis.url" $) $index -}}
+  {{- end }}
+{{- end -}}
+
+{{- define "harbor.redis.dbForRegistry" -}}
+  {{- with .Values.redis }}
+    {{- ternary .internal.registryDatabaseIndex .external.registryDatabaseIndex (eq .type "internal") }}
+  {{- end }}
+{{- end -}}
+
+{{- define "harbor.portal" -}}
+  {{- printf "%s-portal" (include "harbor.fullname" .) -}}
+{{- end -}}
+
+{{- define "harbor.core" -}}
+  {{- printf "%s-core" (include "harbor.fullname" .) -}}
+{{- end -}}
+
+{{- define "harbor.redis" -}}
+  {{- printf "%s-redis" (include "harbor.fullname" .) -}}
+{{- end -}}
+
+{{- define "harbor.jobservice" -}}
+  {{- printf "%s-jobservice" (include "harbor.fullname" .) -}}
+{{- end -}}
+
+{{- define "harbor.registry" -}}
+  {{- printf "%s-registry" (include "harbor.fullname" .) -}}
+{{- end -}}
+
+{{- define "harbor.registryCtl" -}}
+  {{- printf "%s-registryctl" (include "harbor.fullname" .) -}}
+{{- end -}}
+
+{{- define "harbor.database" -}}
+  {{- printf "%s-database" (include "harbor.fullname" .) -}}
+{{- end -}}
+
+{{- define "harbor.trivy" -}}
+  {{- printf "%s-trivy" (include "harbor.fullname" .) -}}
+{{- end -}}
+
+{{- define "harbor.nginx" -}}
+  {{- printf "%s-nginx" (include "harbor.fullname" .) -}}
+{{- end -}}
+
+{{- define "harbor.exporter" -}}
+  {{- printf "%s-exporter" (include "harbor.fullname" .) -}}
+{{- end -}}
+
+{{- define "harbor.ingress" -}}
+  {{- printf "%s-ingress" (include "harbor.fullname" .) -}}
+{{- end -}}
+
+{{- define "harbor.route" -}}
+  {{- printf "%s-route" (include "harbor.fullname" .) -}}
+{{- end -}}
+
+{{- define "harbor.noProxy" -}}
+  {{- printf "%s,%s,%s,%s,%s,%s,%s,%s" (include "harbor.core" .) (include "harbor.jobservice" .) (include "harbor.database" .) (include "harbor.registry" .) (include "harbor.portal" .) (include "harbor.trivy" .) (include "harbor.exporter" .) .Values.proxy.noProxy -}}
 {{- end -}}
 
 {{- define "harbor.caBundleVolume" -}}
 - name: ca-bundle-certs
   secret:
-    secretName: {{ .Values.internalTLS.caBundleSecret }}
+    secretName: {{ .Values.caBundleSecretName }}
 {{- end -}}
 
 {{- define "harbor.caBundleVolumeMount" -}}
@@ -38,641 +333,274 @@ Return true if the NGINX TLS certs should be auto-generated
   subPath: ca.crt
 {{- end -}}
 
+{{/* scheme for all components because it only support http mode */}}
+{{- define "harbor.component.scheme" -}}
+  {{- if .Values.internalTLS.enabled -}}
+    {{- printf "https" -}}
+  {{- else -}}
+    {{- printf "http" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* core component container port */}}
+{{- define "harbor.core.containerPort" -}}
+  {{- if .Values.internalTLS.enabled -}}
+    {{- printf "8443" -}}
+  {{- else -}}
+    {{- printf "8080" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* core component service port */}}
+{{- define "harbor.core.servicePort" -}}
+  {{- if .Values.internalTLS.enabled -}}
+    {{- printf "443" -}}
+  {{- else -}}
+    {{- printf "80" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* jobservice component container port */}}
+{{- define "harbor.jobservice.containerPort" -}}
+  {{- if .Values.internalTLS.enabled -}}
+    {{- printf "8443" -}}
+  {{- else -}}
+    {{- printf "8080" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* jobservice component service port */}}
+{{- define "harbor.jobservice.servicePort" -}}
+  {{- if .Values.internalTLS.enabled -}}
+    {{- printf "443" -}}
+  {{- else -}}
+    {{- printf "80" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* portal component container port */}}
+{{- define "harbor.portal.containerPort" -}}
+  {{- if .Values.internalTLS.enabled -}}
+    {{- printf "8443" -}}
+  {{- else -}}
+    {{- printf "8080" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* portal component service port */}}
+{{- define "harbor.portal.servicePort" -}}
+  {{- if .Values.internalTLS.enabled -}}
+    {{- printf "443" -}}
+  {{- else -}}
+    {{- printf "80" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* registry component container port */}}
+{{- define "harbor.registry.containerPort" -}}
+  {{- if .Values.internalTLS.enabled -}}
+    {{- printf "5443" -}}
+  {{- else -}}
+    {{- printf "5000" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* registry component service port */}}
+{{- define "harbor.registry.servicePort" -}}
+  {{- if .Values.internalTLS.enabled -}}
+    {{- printf "5443" -}}
+  {{- else -}}
+    {{- printf "5000" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* registryctl component container port */}}
+{{- define "harbor.registryctl.containerPort" -}}
+  {{- if .Values.internalTLS.enabled -}}
+    {{- printf "8443" -}}
+  {{- else -}}
+    {{- printf "8080" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* registryctl component service port */}}
+{{- define "harbor.registryctl.servicePort" -}}
+  {{- if .Values.internalTLS.enabled -}}
+    {{- printf "8443" -}}
+  {{- else -}}
+    {{- printf "8080" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* trivy component container port */}}
+{{- define "harbor.trivy.containerPort" -}}
+  {{- if .Values.internalTLS.enabled -}}
+    {{- printf "8443" -}}
+  {{- else -}}
+    {{- printf "8080" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* trivy component service port */}}
+{{- define "harbor.trivy.servicePort" -}}
+  {{- if .Values.internalTLS.enabled -}}
+    {{- printf "8443" -}}
+  {{- else -}}
+    {{- printf "8080" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* CORE_URL */}}
 {{/* port is included in this url as a workaround for issue https://github.com/aquasecurity/harbor-scanner-trivy/issues/108 */}}
-{{- define "harbor.core.url" -}}
-  {{- printf "%s://%s:%d" (ternary "https" "http" .Values.internalTLS.enabled) (include "harbor.core" .) (ternary .Values.core.service.ports.https .Values.core.service.ports.http .Values.internalTLS.enabled | int) -}}
+{{- define "harbor.coreURL" -}}
+  {{- printf "%s://%s:%s" (include "harbor.component.scheme" .) (include "harbor.core" .) (include "harbor.core.servicePort" .) -}}
 {{- end -}}
 
-{{- define "harbor.jobservice.url" -}}
-  {{- printf "%s://%s-jobservice:%d" (ternary "https" "http" .Values.internalTLS.enabled) (include "common.names.fullname" .) (ternary .Values.jobservice.service.ports.https .Values.jobservice.service.ports.http .Values.internalTLS.enabled | int) -}}
+{{/* JOBSERVICE_URL */}}
+{{- define "harbor.jobserviceURL" -}}
+  {{- printf "%s://%s-jobservice" (include "harbor.component.scheme" .)  (include "harbor.fullname" .) -}}
 {{- end -}}
 
-{{- define "harbor.portal.url" -}}
-  {{- printf "%s://%s:%d" (ternary "https" "http" .Values.internalTLS.enabled) (include "harbor.portal" .) (ternary .Values.portal.service.ports.https .Values.portal.service.ports.http .Values.internalTLS.enabled | int) -}}
+{{/* PORTAL_URL */}}
+{{- define "harbor.portalURL" -}}
+  {{- printf "%s://%s" (include "harbor.component.scheme" .) (include "harbor.portal" .) -}}
 {{- end -}}
 
-{{- define "harbor.registry.url" -}}
-  {{- printf "%s://%s:%d" (ternary "https" "http" .Values.internalTLS.enabled) (include "harbor.registry" .) (ternary .Values.registry.server.service.ports.https .Values.registry.server.service.ports.http .Values.internalTLS.enabled | int ) -}}
+{{/* REGISTRY_URL */}}
+{{- define "harbor.registryURL" -}}
+  {{- printf "%s://%s:%s" (include "harbor.component.scheme" .) (include "harbor.registry" .) (include "harbor.registry.servicePort" .) -}}
 {{- end -}}
 
-{{- define "harbor.registryCtl.url" -}}
-  {{- printf "%s://%s:%d" (ternary "https" "http" .Values.internalTLS.enabled) (include "harbor.registry" .) (ternary .Values.registry.controller.service.ports.https .Values.registry.controller.service.ports.http .Values.internalTLS.enabled | int ) -}}
+{{/* REGISTRY_CONTROLLER_URL */}}
+{{- define "harbor.registryControllerURL" -}}
+  {{- printf "%s://%s:%s" (include "harbor.component.scheme" .) (include "harbor.registry" .) (include "harbor.registryctl.servicePort" .) -}}
 {{- end -}}
 
-{{- define "harbor.tokenService.url" -}}
-  {{- printf "%s/service/token" (include "harbor.core.url" .) -}}
+{{/* TOKEN_SERVICE_URL */}}
+{{- define "harbor.tokenServiceURL" -}}
+  {{- printf "%s/service/token" (include "harbor.coreURL" .) -}}
 {{- end -}}
 
-{{- define "harbor.trivy.url" -}}
-  {{- printf "%s://%s:%d" (ternary "https" "http" .Values.internalTLS.enabled) (include "harbor.trivy" .) (ternary .Values.trivy.service.ports.https .Values.trivy.service.ports.http .Values.internalTLS.enabled | int) -}}
+{{/* TRIVY_ADAPTER_URL */}}
+{{- define "harbor.trivyAdapterURL" -}}
+  {{- printf "%s://%s:%s" (include "harbor.component.scheme" .) (include "harbor.trivy" .) (include "harbor.trivy.servicePort" .) -}}
 {{- end -}}
 
-{{/* Secret key that contains the Harbor admin password */}}
-{{- define "harbor.secret.adminPasswordKey" -}}
-{{- default "HARBOR_ADMIN_PASSWORD" .Values.existingSecretAdminPasswordKey -}}
-{{- end -}}
-
-{{/* Core secret name */}}
-{{- define "harbor.core.secretName" -}}
-{{- default (include "harbor.core" .) .Values.core.existingSecret -}}
-{{- end -}}
-
-{{/* Core token secret name */}}
-{{- define "harbor.core.token.secretName" -}}
-{{- default (include "harbor.core" .) .Values.core.secretName -}}
-{{- end -}}
-
-{{/* Core env. vars secret name */}}
-{{- define "harbor.core.envvars.secretName" -}}
-{{- default (printf "%s-envvars" (include "harbor.core" .)) .Values.core.existingEnvVarsSecret -}}
-{{- end -}}
-
-{{/* Core configuration overrides secret name */}}
-{{- define "harbor.core.overridesJsonSecret" -}}
-{{- default (printf "%s-config-override" (include "harbor.core" .)) .Values.core.configOverwriteJsonSecret -}}
-{{- end -}}
-
-{{/* Core TLS secret name */}}
-{{- define "harbor.core.tls.secretName" -}}
-{{- default (printf "%s-crt" (include "harbor.core" .)) .Values.core.tls.existingSecret -}}
-{{- end -}}
-
-{{/* Jobservice secret name */}}
-{{- define "harbor.jobservice.secretName" -}}
-{{- default (include "harbor.jobservice" .) .Values.jobservice.existingSecret -}}
-{{- end -}}
-
-{{/* Jobservice TLS secret name */}}
-{{- define "harbor.jobservice.tls.secretName" -}}
-{{- default (printf "%s-crt" (include "harbor.jobservice" .)) .Values.jobservice.tls.existingSecret -}}
-{{- end -}}
-
-{{/* Portal TLS secret name */}}
-{{- define "harbor.portal.tls.secretName" -}}
-{{- default (printf "%s-crt" (include "harbor.portal" .)) .Values.portal.tls.existingSecret -}}
-{{- end -}}
-
-{{/* Registry TLS secret name */}}
-{{- define "harbor.registry.tls.secretName" -}}
-{{- default (printf "%s-crt" (include "harbor.registry" .)) .Values.registry.tls.existingSecret -}}
-{{- end -}}
-
-{{/* Trivy TLS secret name */}}
-{{- define "harbor.trivy.tls.secretName" -}}
-{{- default (printf "%s-crt" (include "harbor.trivy" .)) .Values.trivy.tls.existingSecret -}}
-{{- end -}}
-
-{{/*
-Create a default fully qualified postgresql name.
-We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
-*/}}
-{{- define "harbor.postgresql.fullname" -}}
-{{- include "common.names.dependency.fullname" (dict "chartName" "postgresql" "chartValues" .Values.postgresql "context" $) -}}
-{{- end -}}
-
-{{- define "harbor.database.host" -}}
-{{- if .Values.postgresql.enabled -}}
-    {{- ternary (printf "%s-primary" (include "harbor.postgresql.fullname" .)) (include "harbor.postgresql.fullname" .) (eq .Values.postgresql.architecture "replication") -}}
-{{- else -}}
-    {{- tpl .Values.externalDatabase.host . -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "harbor.database.port" -}}
-{{- ternary "5432" .Values.externalDatabase.port .Values.postgresql.enabled -}}
-{{- end -}}
-
-{{- define "harbor.database.username" -}}
-{{- ternary "postgres" .Values.externalDatabase.user .Values.postgresql.enabled -}}
-{{- end -}}
-
-{{- define "harbor.database.rawPassword" -}}
-{{- if .Values.postgresql.enabled -}}
-  {{- coalesce (((.Values.global).postgresql).auth).postgresPassword .Values.postgresql.auth.postgresPassword -}}
-{{- else if not .Values.externalDatabase.existingSecret -}}
-  {{- .Values.externalDatabase.password -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "harbor.database.coreDatabase" -}}
-{{- ternary "registry" .Values.externalDatabase.coreDatabase .Values.postgresql.enabled -}}
-{{- end -}}
-
-{{- define "harbor.database.sslmode" -}}
-{{- ternary "disable" .Values.externalDatabase.sslmode .Values.postgresql.enabled -}}
-{{- end -}}
-
-{{/*
-Create a default fully qualified app name
-We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
-*/}}
-{{- define "harbor.redis.fullname" -}}
-{{- include "common.names.dependency.fullname" (dict "chartName" "redis" "chartValues" .Values.redis "context" $) -}}
-{{- end -}}
-
-{{- define "harbor.redis.host" -}}
-{{- if .context.Values.redis.enabled -}}
-{{- ternary (printf "%s-headless.%s.svc.%s" (include "harbor.redis.fullname" .context ) (include "common.names.namespace" .context) .context.Values.clusterDomain ) (printf "%s-master.%s.svc.%s" (include "harbor.redis.fullname" .context) (include "common.names.namespace" .context) .context.Values.clusterDomain ) .context.Values.redis.sentinel.enabled -}} 
-{{- else -}}
-{{- $externalRedis := ternary ( get .context.Values.externalRedis .component ) .context.Values.externalRedis .context.Values.externalRedis.instancePerComponent -}}
-{{- ternary (printf "%s" $externalRedis.sentinel.hosts) $externalRedis.host $externalRedis.sentinel.enabled -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "harbor.redis.port" -}}
-{{- if .context.Values.redis.enabled -}}
-{{- ternary (int64 .context.Values.redis.sentinel.service.ports.sentinel) "6379" .context.Values.redis.sentinel.enabled -}}
-{{- else -}}
-{{- ternary (get .context.Values.externalRedis .component ).port .context.Values.externalRedis.port .context.Values.externalRedis.instancePerComponent -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "harbor.redis.sentinel.enabled" -}}
-{{- if or (and .context.Values.redis.enabled .context.Values.redis.sentinel) (and (not .context.Values.redis.enabled) (ternary (get .context.Values.externalRedis .component ).sentinel .context.Values.externalRedis.sentinel .context.Values.externalRedis.instancePerComponent)) -}}
-true
-{{- end -}}
-{{- end -}}
-
-{{- define "harbor.redis.sentinel.masterSet" -}}
-{{- $sentinel := .context.Values.redis.sentinel -}}
-{{- if not .context.Values.redis.enabled -}}
-{{- $sentinel = ternary (get .context.Values.externalRedis .component ).sentinel .context.Values.externalRedis.sentinel .context.Values.externalRedis.instancePerComponent -}}
-{{- end -}}
-{{- ternary (printf "%s" $sentinel.masterSet) ("") $sentinel.enabled -}}
-{{- end -}}
-
-{{- define "harbor.redis.coreDatabaseIndex" -}}
-{{- ternary "0" (ternary (get .Values.externalRedis "core" ).index .Values.externalRedis.coreDatabaseIndex .Values.externalRedis.instancePerComponent) .Values.redis.enabled -}}
-{{- end -}}
-
-{{- define "harbor.redis.jobserviceDatabaseIndex" -}}
-{{- ternary "1" (ternary (get .Values.externalRedis "jobservice" ).index .Values.externalRedis.jobserviceDatabaseIndex .Values.externalRedis.instancePerComponent) .Values.redis.enabled -}}
-{{- end -}}
-
-{{- define "harbor.redis.registryDatabaseIndex" -}}
-{{- ternary "2" (ternary (get .Values.externalRedis "registry" ).index .Values.externalRedis.registryDatabaseIndex .Values.externalRedis.instancePerComponent) .Values.redis.enabled -}}
-{{- end -}}
-
-{{- define "harbor.redis.trivyAdapterDatabaseIndex" -}}
-{{- ternary "5" (ternary (get .Values.externalRedis "trivy" ).index .Values.externalRedis.trivyAdapterDatabaseIndex .Values.externalRedis.instancePerComponent) .Values.redis.enabled -}}
-{{- end -}}
-
-{{- define "harbor.redis.username" -}}
-{{- if .context.Values.redis.enabled -}}
-  {{- print "default" -}}
-{{- else -}}
-  {{- $externalRedis := ternary ( get .context.Values.externalRedis .component ) .context.Values.externalRedis .context.Values.externalRedis.instancePerComponent -}}
-  {{- default "default" $externalRedis.username -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "harbor.redis.rawPassword" -}}
-  {{- $externalRedis := ternary ( get .context.Values.externalRedis .component ) .context.Values.externalRedis .context.Values.externalRedis.instancePerComponent -}}
-  {{- if and (not .context.Values.redis.enabled) $externalRedis.password -}}
-    {{- $externalRedis.password -}}
-  {{- else if and (not .context.Values.redis.enabled) $externalRedis.existingSecret -}}
-    {{- $secret := tpl $externalRedis.existingSecret .context -}}
-    {{- include "common.secrets.lookup" (dict "secret" $secret "key" "redis-password" "context" .context) }}
-  {{- end -}}
-  {{- if and .context.Values.redis.enabled .context.Values.redis.auth.enabled .context.Values.redis.auth.password -}}
-    {{- .context.Values.redis.auth.password -}}
-  {{- else if and .context.Values.redis.enabled .context.Values.redis.auth.enabled .context.Values.redis.auth.existingSecret -}}
-    {{- $secret := tpl .context.Values.redis.auth.existingSecret .context -}}
-    {{- include "common.secrets.lookup" (dict "secret" $secret "key" "redis-password" "context" .context) }}
-  {{- end -}}
-{{- end -}}
-
-{{- define "harbor.redis.escapedRawPassword" -}}
-  {{- if (include "harbor.redis.rawPassword" . ) -}}
-    {{- include "harbor.redis.rawPassword" . | urlquery | replace "+" "%20" -}}
-  {{- end -}}
-{{- end -}}
-
-{{/* Redis Scheme used in the connection URL */}}
-{{- define "harbor.redis.scheme" -}}
-  {{- $externalRedis := ternary ( get .context.Values.externalRedis .component ) .context.Values.externalRedis .context.Values.externalRedis.instancePerComponent -}}
-  {{- $defaultScheme := ternary "rediss" "redis" (or $externalRedis.tls.enabled .context.Values.redis.tls.enabled ) -}}
-  {{- if or $externalRedis.sentinel.enabled .context.Values.redis.sentinel.enabled -}}
-    {{- printf "%s+sentinel" $defaultScheme -}}
+{{- define "harbor.internalTLS.core.secretName" -}}
+  {{- if eq .Values.internalTLS.certSource "secret" -}}
+    {{- .Values.internalTLS.core.secretName -}}
   {{- else -}}
-    {{- print $defaultScheme -}}
+    {{- printf "%s-core-internal-tls" (include "harbor.fullname" .) -}}
   {{- end -}}
 {{- end -}}
 
-{{/*the username redis is used for a placeholder as no username needed in redis*/}}
-{{- define "harbor.redisForJobservice" -}}
-  {{- $component := "jobservice" -}}
-  {{- $args := dict "context" . "component" $component -}}
-  {{- if not (include "harbor.redis.sentinel.enabled" $args)  -}}
-    {{- if (include "harbor.redis.escapedRawPassword" $args) -}}
-      {{- printf "%s://%s:%s@%s:%s/%s" (include "harbor.redis.scheme" $args) (include "harbor.redis.username" $args) (include "harbor.redis.escapedRawPassword" $args) (include "harbor.redis.host" $args) (include "harbor.redis.port" $args) (include "harbor.redis.jobserviceDatabaseIndex" . ) -}}
-    {{- else -}}
-      {{- printf "%s://%s:%s/%s" (include "harbor.redis.scheme" $args) (include "harbor.redis.host" $args) (include "harbor.redis.port" $args) (include "harbor.redis.jobserviceDatabaseIndex" . ) -}}
-    {{- end -}}
+{{- define "harbor.internalTLS.jobservice.secretName" -}}
+  {{- if eq .Values.internalTLS.certSource "secret" -}}
+    {{- .Values.internalTLS.jobservice.secretName -}}
   {{- else -}}
-    {{- if (include "harbor.redis.escapedRawPassword" $args) -}}
-      {{- printf "%s://%s:%s@%s:%s/%s/%s" (include "harbor.redis.scheme" $args) (include "harbor.redis.username" $args) (include "harbor.redis.escapedRawPassword" $args) (include "harbor.redis.host" $args) (include "harbor.redis.port" $args) (include "harbor.redis.sentinel.masterSet" $args) (include "harbor.redis.jobserviceDatabaseIndex" . ) -}}
-    {{- else -}}
-      {{- printf "%s://%s:%s/%s/%s" (include "harbor.redis.scheme" $args) (include "harbor.redis.host" $args) (include "harbor.redis.port" $args) (include "harbor.redis.sentinel.masterSet" $args) (include "harbor.redis.jobserviceDatabaseIndex" . ) -}}
-    {{- end -}}
+    {{- printf "%s-jobservice-internal-tls" (include "harbor.fullname" .) -}}
   {{- end -}}
 {{- end -}}
 
-{{/*the username redis is used for a placeholder as no username needed in redis*/}}
-{{- define "harbor.redisForGC" -}}
-  {{- $component := "registry" -}}
-  {{- $args := dict "context" . "component" $component -}}
-  {{- if not (include "harbor.redis.sentinel.enabled" $args)  -}}
-    {{- if (include "harbor.redis.escapedRawPassword" $args) -}}
-      {{- printf "%s://%s:%s@%s:%s/%s" (include "harbor.redis.scheme" $args) (include "harbor.redis.username" $args) (include "harbor.redis.escapedRawPassword" $args) (include "harbor.redis.host" $args) (include "harbor.redis.port" $args) (include "harbor.redis.registryDatabaseIndex" . ) -}}
-    {{- else -}}
-      {{- printf "%s://%s:%s/%s" (include "harbor.redis.scheme" $args) (include "harbor.redis.host" $args) (include "harbor.redis.port" $args) (include "harbor.redis.registryDatabaseIndex" . ) -}}
-    {{- end -}}
+{{- define "harbor.internalTLS.portal.secretName" -}}
+  {{- if eq .Values.internalTLS.certSource "secret" -}}
+    {{- .Values.internalTLS.portal.secretName -}}
   {{- else -}}
-    {{- if (include "harbor.redis.escapedRawPassword" $args) -}}
-      {{- printf "%s://%s:%s@%s:%s/%s/%s" (include "harbor.redis.scheme" $args) (include "harbor.redis.username" $args) (include "harbor.redis.escapedRawPassword" $args) (include "harbor.redis.host" $args) (include "harbor.redis.port" $args) (include "harbor.redis.sentinel.masterSet" $args) (include "harbor.redis.registryDatabaseIndex" . ) -}}
-    {{- else -}}
-      {{- printf "%s://%s:%s/%s/%s" (include "harbor.redis.scheme" $args) (include "harbor.redis.host" $args) (include "harbor.redis.port" $args) (include "harbor.redis.sentinel.masterSet" $args) (include "harbor.redis.registryDatabaseIndex" . ) -}}
-    {{- end -}}
+    {{- printf "%s-portal-internal-tls" (include "harbor.fullname" .) -}}
   {{- end -}}
 {{- end -}}
 
-{{- define "harbor.redisForTrivyAdapter" -}}
-  {{- $component := "trivy" -}}
-  {{- $args := dict "context" . "component" $component -}}
-  {{- if not (include "harbor.redis.sentinel.enabled" $args)  -}}
-    {{- if (include "harbor.redis.escapedRawPassword" $args) -}}
-      {{- printf "%s://%s:%s@%s:%s/%s" (include "harbor.redis.scheme" $args) (include "harbor.redis.username" $args) (include "harbor.redis.escapedRawPassword" $args) (include "harbor.redis.host" $args) (include "harbor.redis.port" $args) (include "harbor.redis.trivyAdapterDatabaseIndex" . ) -}}
-    {{- else -}}
-      {{- printf "%s://%s:%s/%s" (include "harbor.redis.scheme" $args) (include "harbor.redis.host" $args) (include "harbor.redis.port" $args) (include "harbor.redis.trivyAdapterDatabaseIndex" . ) -}}
-    {{- end -}}
+{{- define "harbor.internalTLS.registry.secretName" -}}
+  {{- if eq .Values.internalTLS.certSource "secret" -}}
+    {{- .Values.internalTLS.registry.secretName -}}
   {{- else -}}
-    {{- if (include "harbor.redis.escapedRawPassword" $args) -}}
-      {{- printf "%s://%s:%s@%s:%s/%s/%s" (include "harbor.redis.scheme" $args) (include "harbor.redis.username" $args) (include "harbor.redis.escapedRawPassword" $args) (include "harbor.redis.host" $args) (include "harbor.redis.port" $args) (include "harbor.redis.sentinel.masterSet" $args) (include "harbor.redis.trivyAdapterDatabaseIndex" . ) -}}
-    {{- else -}}
-      {{- printf "%s://%s:%s/%s/%s" (include "harbor.redis.scheme" $args) (include "harbor.redis.host" $args) (include "harbor.redis.port" $args) (include "harbor.redis.sentinel.masterSet" $args) (include "harbor.redis.trivyAdapterDatabaseIndex" . ) -}}
-    {{- end -}}
+    {{- printf "%s-registry-internal-tls" (include "harbor.fullname" .) -}}
   {{- end -}}
 {{- end -}}
 
-{{- define "harbor.redisForCore" -}}
-  {{- $component := "core" -}}
-  {{- $args := dict "context" . "component" $component -}}
-  {{- if not (include "harbor.redis.sentinel.enabled" $args)  -}}
-    {{- if (include "harbor.redis.escapedRawPassword" $args) -}}
-      {{- printf "%s://%s:%s@%s:%s/%s" (include "harbor.redis.scheme" $args) (include "harbor.redis.username" $args) (include "harbor.redis.escapedRawPassword" $args) (include "harbor.redis.host" $args) (include "harbor.redis.port" $args) (include "harbor.redis.coreDatabaseIndex" . ) -}}
-    {{- else -}}
-      {{- printf "%s://%s:%s/%s" (include "harbor.redis.scheme" $args) (include "harbor.redis.host" $args) (include "harbor.redis.port" $args) (include "harbor.redis.coreDatabaseIndex" . ) -}}
-    {{- end -}}
+{{- define "harbor.internalTLS.trivy.secretName" -}}
+  {{- if eq .Values.internalTLS.certSource "secret" -}}
+    {{- .Values.internalTLS.trivy.secretName -}}
   {{- else -}}
-    {{- if (include "harbor.redis.escapedRawPassword" $args) -}}
-      {{- printf "%s://%s:%s@%s:%s/%s/%s" (include "harbor.redis.scheme" $args) (include "harbor.redis.username" $args) (include "harbor.redis.escapedRawPassword" $args) (include "harbor.redis.host" $args) (include "harbor.redis.port" $args) (include "harbor.redis.sentinel.masterSet" $args) (include "harbor.redis.coreDatabaseIndex" . ) -}}
-    {{- else -}}
-      {{- printf "%s://%s:%s/%s/%s" (include "harbor.redis.scheme" $args) (include "harbor.redis.host" $args) (include "harbor.redis.port" $args) (include "harbor.redis.sentinel.masterSet" $args) (include "harbor.redis.coreDatabaseIndex" . ) -}}
-    {{- end -}}
+    {{- printf "%s-trivy-internal-tls" (include "harbor.fullname" .) -}}
   {{- end -}}
 {{- end -}}
 
-{{/* Volume Mount with Redis TLS secrets */}}
-{{- define "harbor.redis.caVolumeMount" -}}
-{{- $externalRedis := ternary ( get .context.Values.externalRedis .component ) .context.Values.externalRedis .context.Values.externalRedis.instancePerComponent -}}
-{{- if or .context.Values.redis.tls.enabled $externalRedis.tls.enabled -}}
-- name: redis-certs
-  mountPath: /harbor_cust_cert/redis-ca.crt
-  subPath: {{ include "harbor.redis.caFileName" . | quote }}
-{{- end -}}
-{{- end -}}
-
-{{/* Volume with Redis TLS secrets */}}
-{{- define "harbor.redis.caVolume" -}}
-{{- $externalRedis := ternary ( get .context.Values.externalRedis .component ) .context.Values.externalRedis .context.Values.externalRedis.instancePerComponent -}}
-{{- if or .context.Values.redis.tls.enabled $externalRedis.tls.enabled -}}
-- name: redis-certs
-  secret:
-    secretName: {{ include "harbor.redis.caSecretName" . | quote }}
-{{- end -}}
-{{- end -}}
-
-{{/* Get Redis secret with the CA certificate */}}
-{{- define "harbor.redis.caSecretName" -}}
-  {{- $externalRedis := ternary ( get .context.Values.externalRedis .component ) .context.Values.externalRedis .context.Values.externalRedis.instancePerComponent -}}
-  {{- if and .context.Values.redis.enabled .content.Values.redis.tls.enabled .context.Values.redis.tls.existingSecret -}}
-    {{- print (tpl .content.Values.redis.tls.existingSecret .) -}}
-  {{- else if and $externalRedis.tls.enabled $externalRedis.tls.existingSecret -}}
-    {{- print (tpl $externalRedis.tls.existingSecret .) -}}
+{{- define "harbor.tlsCoreSecretForIngress" -}}
+  {{- if eq .Values.expose.tls.certSource "none" -}}
+    {{- printf "" -}}
+  {{- else if eq .Values.expose.tls.certSource "secret" -}}
+    {{- .Values.expose.tls.secret.secretName -}}
   {{- else -}}
-    {{- printf "%s-crt" (include "harbor.redis.fullname" .) -}}
+    {{- include "harbor.ingress" . -}}
   {{- end -}}
 {{- end -}}
 
-{{/* Get key in Redis secret with the CA certificate */}}
-{{- define "harbor.redis.caFileName" -}}
-  {{- $externalRedis := ternary ( get .context.Values.externalRedis .component ) .context.Values.externalRedis .context.Values.externalRedis.instancePerComponent -}}
-  {{- if and .context.Values.redis.enabled .context.Values.redis.tls.enabled .context.Values.redis.tls.certCAFilename -}}
-    {{- print (tpl .context.Values.redis.tls.certCAFilename .) -}}
-  {{- else if and $externalRedis.tls.enabled $externalRedis.tls.certCAFilename -}}
-    {{- print (tpl $externalRedis.tls.certCAFilename .) -}}
+{{- define "harbor.tlsSecretForNginx" -}}
+  {{- if eq .Values.expose.tls.certSource "secret" -}}
+    {{- .Values.expose.tls.secret.secretName -}}
   {{- else -}}
-    {{- print "ca.crt" -}}
+    {{- include "harbor.nginx" . -}}
   {{- end -}}
 {{- end -}}
 
-{{- define "harbor.portal" -}}
-  {{- printf "%s-portal" (include "common.names.fullname" .) -}}
-{{- end -}}
-
-{{- define "harbor.core" -}}
-  {{- printf "%s-core" (include "common.names.fullname" .) -}}
-{{- end -}}
-
-{{- define "harbor.redis" -}}
-  {{- printf "%s-redis" (include "common.names.fullname" .) -}}
-{{- end -}}
-
-{{- define "harbor.jobservice" -}}
-  {{- printf "%s-jobservice" (include "common.names.fullname" .) -}}
-{{- end -}}
-
-{{- define "harbor.registry" -}}
-  {{- printf "%s-registry" (include "common.names.fullname" .) -}}
-{{- end -}}
-
-{{- define "harbor.database" -}}
-  {{- printf "%s-database" (include "common.names.fullname" .) -}}
-{{- end -}}
-
-{{- define "harbor.trivy" -}}
-  {{- printf "%s-trivy" (include "common.names.fullname" .) -}}
-{{- end -}}
-
-{{- define "harbor.nginx" -}}
-  {{- printf "%s-nginx" (include "common.names.fullname" .) -}}
-{{- end -}}
-
-{{- define "harbor.exporter" -}}
-  {{- printf "%s-exporter" (include "common.names.fullname" .) -}}
-{{- end -}}
-
-{{- define "harbor.ingress" -}}
-  {{- printf "%s-ingress" (include "common.names.fullname" .) -}}
-{{- end -}}
-
-{{- define "harbor.noProxy" -}}
-  {{- printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s" (include "harbor.core" .) (include "harbor.jobservice" .) (include "harbor.database" .) (include "harbor.registry" .) (include "harbor.portal" .) (include "harbor.trivy" .) .Values.proxy.noProxy -}}
-{{- end -}}
-
-{{/*
-Return the proper Harbor Core image name
-*/}}
-{{- define "harbor.core.image" -}}
-{{- include "common.images.image" ( dict "imageRoot" .Values.core.image "global" .Values.global ) -}}
-{{- end -}}
-
-{{/*
-Return the proper Harbor Exporter image name
-*/}}
-{{- define "harbor.exporter.image" -}}
-{{- include "common.images.image" ( dict "imageRoot" .Values.exporter.image "global" .Values.global ) -}}
-{{- end -}}
-
-{{/*
-Return the proper Harbor Portal image name
-*/}}
-{{- define "harbor.portal.image" -}}
-{{- include "common.images.image" ( dict "imageRoot" .Values.portal.image "global" .Values.global ) -}}
-{{- end -}}
-
-{{/*
-Return the proper Harbor Trivy Adapter image name
-*/}}
-{{- define "harbor.trivy.image" -}}
-{{- include "common.images.image" ( dict "imageRoot" .Values.trivy.image "global" .Values.global ) -}}
-{{- end -}}
-
-{{/*
-Return the proper Harbor Job Service image name
-*/}}
-{{- define "harbor.jobservice.image" -}}
-{{- include "common.images.image" ( dict "imageRoot" .Values.jobservice.image "global" .Values.global ) -}}
-{{- end -}}
-
-{{/*
-Return the proper Harbor Registry image name
-*/}}
-{{- define "harbor.registry.server.image" -}}
-{{- include "common.images.image" ( dict "imageRoot" .Values.registry.server.image "global" .Values.global ) -}}
-{{- end -}}
-
-{{/*
-Return the proper Harbor Registryctl image name
-*/}}
-{{- define "harbor.registry.controller.image" -}}
-{{- include "common.images.image" ( dict "imageRoot" .Values.registry.controller.image "global" .Values.global ) -}}
-{{- end -}}
-
-{{/*
-Return the proper Nginx image name
-*/}}
-{{- define "harbor.nginx.image" -}}
-{{- include "common.images.image" ( dict "imageRoot" .Values.nginx.image "global" .Values.global ) -}}
-{{- end -}}
-
-{{/*
-Return the proper image name (for the init container volume-permissions image)
-*/}}
-{{- define "harbor.volumePermissions.image" -}}
-{{- include "common.images.image" ( dict "imageRoot" .Values.volumePermissions.image "global" .Values.global ) -}}
-{{- end -}}
-
-{{/*
-Return the proper Docker Image Registry Secret Names
-*/}}
-{{- define "harbor.imagePullSecrets" -}}
-{{- include "common.images.pullSecrets" (dict "images" (list .Values.core.image .Values.exporter.image .Values.portal.image .Values.jobservice.image .Values.trivy.image .Values.registry.server.image .Values.registry.controller.image .Values.nginx.image .Values.volumePermissions.image) "global" .Values.global) -}}
-{{- end -}}
-
-{{/* Check if there are rolling tags in the images */}}
-{{- define "harbor.checkRollingTags" -}}
-{{- include "common.warnings.rollingTag" .Values.core.image -}}
-{{- include "common.warnings.rollingTag" .Values.portal.image -}}
-{{- include "common.warnings.rollingTag" .Values.jobservice.image -}}
-{{- include "common.warnings.rollingTag" .Values.registry.server.image -}}
-{{- include "common.warnings.rollingTag" .Values.registry.controller.image -}}
-{{- include "common.warnings.rollingTag" .Values.trivy.image -}}
-{{- include "common.warnings.rollingTag" .Values.volumePermissions.image -}}
-{{- end -}}
-
-{{/*
-Compile all warnings into a single message, and call fail.
-*/}}
-{{- define "harbor.validateValues" -}}
-{{- $messages := list -}}
-{{- $messages := append $messages (include "harbor.validateValues.postgresqlPassword" .) -}}
-{{- $messages := append $messages (include "harbor.validateValues.exposureType" .) -}}
-{{- $messages := append $messages (include "harbor.validateValues.redisTLS" .) -}}
-{{- $messages := append $messages (include "harbor.validateValues.redisMutualTLS" .) -}}
-{{- $messages := append $messages (include "harbor.validateValues.externalRedis" .) -}}
-{{- $messages := without $messages "" -}}
-{{- $message := join "\n" $messages -}}
-
-{{- if $message -}}
-{{-   printf "\nVALUES VALIDATION:\n%s" $message | fail -}}
-{{- end -}}
-{{- end -}}
-
-{{/* Validate values of Harbor - must provide a password for PostgreSQL */}}
-{{- define "harbor.validateValues.postgresqlPassword" -}}
-{{- if .Values.postgresql.enabled -}}
-  {{- if empty (include "harbor.database.rawPassword" .) -}}
-harbor: PostgreSQL password
-    A database password is required!.
-    Please set a password (--set postgresql.auth.postgresPassword="xxxx")
-  {{- end -}}
-{{- else -}}
-    {{- if and (not .Values.externalDatabase.password) (not .Values.externalDatabase.existingSecret) -}}
-harbor: External PostgreSQL password
-    An external database password is required!.
-    Please set a password (--set externalDatabase.password="xxxx") or using an existing secret
+{{- define "harbor.metricsPortName" -}}
+  {{- if .Values.internalTLS.enabled }}
+    {{- printf "https-metrics" -}}
+  {{- else -}}
+    {{- printf "http-metrics" -}}
   {{- end -}}
 {{- end -}}
+
+{{- define "harbor.traceEnvs" -}}
+  TRACE_ENABLED: "{{ .Values.trace.enabled }}"
+  TRACE_SAMPLE_RATE: "{{ .Values.trace.sample_rate }}"
+  TRACE_NAMESPACE: "{{ .Values.trace.namespace }}"
+  {{- if .Values.trace.attributes }}
+  TRACE_ATTRIBUTES: {{ .Values.trace.attributes | toJson | squote }}
+  {{- end }}
+  {{- if eq .Values.trace.provider "jaeger" }}
+  TRACE_JAEGER_ENDPOINT: "{{ .Values.trace.jaeger.endpoint }}"
+  TRACE_JAEGER_USERNAME: "{{ .Values.trace.jaeger.username }}"
+  TRACE_JAEGER_AGENT_HOSTNAME: "{{ .Values.trace.jaeger.agent_host }}"
+  TRACE_JAEGER_AGENT_PORT: "{{ .Values.trace.jaeger.agent_port }}"
+  {{- else }}
+  TRACE_OTEL_ENDPOINT: "{{ .Values.trace.otel.endpoint }}"
+  TRACE_OTEL_URL_PATH: "{{ .Values.trace.otel.url_path }}"
+  TRACE_OTEL_COMPRESSION: "{{ .Values.trace.otel.compression }}"
+  TRACE_OTEL_INSECURE: "{{ .Values.trace.otel.insecure }}"
+  TRACE_OTEL_TIMEOUT: "{{ .Values.trace.otel.timeout }}"
+  {{- end }}
 {{- end -}}
 
-{{/* Validate values of Harbor - must provide a valid exposureType */}}
-{{- define "harbor.validateValues.exposureType" -}}
-{{- if and (ne .Values.exposureType "ingress") (ne .Values.exposureType "proxy") -}}
-harbor: exposureType
-    Invalid exposureType selected. Valid values are "ingress" and
-    "proxy". Please set a valid exposureType (--set exposureType="xxxx")
-{{- end -}}
+{{- define "harbor.traceEnvsForCore" -}}
+  {{- if .Values.trace.enabled }}
+  TRACE_SERVICE_NAME: "harbor-core"
+  {{ include "harbor.traceEnvs" . }}
+  {{- end }}
 {{- end -}}
 
-{{/* Validate values of Harbor - must provide a valid Redis TLS config */}}
-{{- define "harbor.validateValues.redisTLS" -}}
-{{- if or (and (not .Values.redis.enabled) .Values.externalRedis.tls.enabled (not .Values.externalRedis.tls.existingSecret)) 
-          (and .Values.redis.enabled (not .Values.redis.tls.autoGenerated) (not .Values.redis.tls.existingSecret)) -}}
-harbor: Redis TLS
-    CA certificate for Redis when TLS is enabled is required.
-    Please set redis.tls.existingSecret or  externalRedis.tls.existingSecret. Example:
-    kubectl create secret generic redis-ca --from-file ca.crt (--set externalRedis.tls.existingSecret="redis-ca")
-{{- end -}}
+{{- define "harbor.traceEnvsForJobservice" -}}
+  {{- if .Values.trace.enabled }}
+  TRACE_SERVICE_NAME: "harbor-jobservice"
+  {{ include "harbor.traceEnvs" . }}
+  {{- end }}
 {{- end -}}
 
-{{/* Validate values of Harbor - Redis Mutual TLS not supported */}}
-{{- define "harbor.validateValues.redisMutualTLS" -}}
-{{- if and .Values.redis.tls.enabled .Values.redis.tls.authClients -}}
-harbor: Redis Mutual TLS
-    At the moment Harbor does not support this configuration. Please set
-    redis.tls.authClients to false (--set redis.tls.authClients=false)
-{{- end -}}
+{{- define "harbor.traceEnvsForRegistryCtl" -}}
+  {{- if .Values.trace.enabled }}
+  TRACE_SERVICE_NAME: "harbor-registryctl"
+  {{ include "harbor.traceEnvs" . }}
+  {{- end }}
 {{- end -}}
 
-{{/* Validate values of Harbor - externalRedis configuration */}}
-{{- define "harbor.validateValues.externalRedis" -}}
-{{- if and .Values.externalRedis.instancePerComponent ( or ( not .Values.externalRedis.core.host ) ( not .Values.externalRedis.jobservice.host ) ( and .Values.externalRedis.trivy.enabled ( not .Values.externalRedis.trivy.host ) ) ( not .Values.externalRedis.registry.host ) ) -}}
-harbor: External Redis instance per Harbor component
-    Following values are mandatory when externalRedis.instancePerComponent is set:
-      * externalRedis.core.host
-      * externalRedis.jobservice.host
-      * externalRedis.trivy.host
-      * externalRedis.registry.host
-{{- end -}}
+{{- define "harbor.traceJaegerPassword" -}}
+  {{- if and .Values.trace.enabled (eq .Values.trace.provider "jaeger") }}
+  TRACE_JAEGER_PASSWORD: "{{ .Values.trace.jaeger.password | default "" | b64enc }}"
+  {{- end }}
 {{- end -}}
 
-{{/* lists all tracing related environment variables except for TRACE_SERVICE_NAME, which should be set separately */}}
-{{- define "harbor.tracing.envvars" -}}
-TRACE_ENABLED: {{ .Values.tracing.enabled | quote }}
-TRACE_SAMPLE_RATE: {{ .Values.tracing.sampleRate | quote }}
-TRACE_NAMESPACE: {{ .Values.tracing.namespace | quote }}
-TRACE_ATTRIBUTES: {{ .Values.tracing.attributes | toJson | squote }}
-{{- if .Values.tracing.jaeger.enabled }}
-TRACE_JAEGER_ENDPOINT: {{ .Values.tracing.jaeger.endpoint | quote }}
-TRACE_JAEGER_USERNAME: {{ .Values.tracing.jaeger.username | quote }}
-TRACE_JAEGER_PASSWORD: {{ .Values.tracing.jaeger.password | quote }}
-TRACE_JAEGER_AGENT_HOSTNAME: {{ .Values.tracing.jaeger.agentHost | quote }}
-TRACE_JAEGER_AGENT_PORT: {{ .Values.tracing.jaeger.agentPort | quote }}
-{{- end }}
-{{- if .Values.tracing.otel.enabled }}
-TRACE_OTEL_ENDPOINT: {{ .Values.tracing.otel.endpoint | quote }}
-TRACE_OTEL_URL_PATH: {{ .Values.tracing.otel.urlpath | quote }}
-TRACE_OTEL_COMPRESSION: {{ .Values.tracing.otel.compression | quote }}
-TRACE_OTEL_TIMEOUT: {{ .Values.tracing.otel.timeout | quote }}
-TRACE_OTEL_INSECURE: {{ .Values.tracing.otel.insecure | quote }}
-{{- end }}
-{{- end -}}
-
-{{/*
-Create the name of the service account to use for the Harbor Core
-*/}}
-{{- define "harbor.core.serviceAccountName" -}}
-{{- if .Values.core.serviceAccount.create -}}
-    {{ default (include "harbor.core" .) .Values.core.serviceAccount.name | trunc 63 | trimSuffix "-" }}
-{{- else -}}
-    {{ default "default" .Values.core.serviceAccount.name }}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Create the name of the service account to use for the Harbor Registry
-*/}}
-{{- define "harbor.registry.serviceAccountName" -}}
-{{- if .Values.registry.serviceAccount.create -}}
-    {{ default (include "harbor.registry" .) .Values.registry.serviceAccount.name | trunc 63 | trimSuffix "-" }}
-{{- else -}}
-    {{ default "default" .Values.registry.serviceAccount.name }}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Create the name of the service account to use for the Harbor Portal
-*/}}
-{{- define "harbor.portal.serviceAccountName" -}}
-{{- if .Values.portal.serviceAccount.create -}}
-    {{ default (include "harbor.portal" .) .Values.portal.serviceAccount.name | trunc 63 | trimSuffix "-" }}
-{{- else -}}
-    {{ default "default" .Values.portal.serviceAccount.name }}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Create the name of the service account to use for the Harbor Jobservice
-*/}}
-{{- define "harbor.jobservice.serviceAccountName" -}}
-{{- if .Values.jobservice.serviceAccount.create -}}
-    {{ default (include "harbor.jobservice" .) .Values.jobservice.serviceAccount.name | trunc 63 | trimSuffix "-" }}
-{{- else -}}
-    {{ default "default" .Values.jobservice.serviceAccount.name }}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Create the name of the service account to use for the Harbor Exporter
-*/}}
-{{- define "harbor.exporter.serviceAccountName" -}}
-{{- if .Values.exporter.serviceAccount.create -}}
-    {{ default (include "harbor.exporter" .) .Values.exporter.serviceAccount.name | trunc 63 | trimSuffix "-" }}
-{{- else -}}
-    {{ default "default" .Values.exporter.serviceAccount.name }}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Create the name of the service account to use for the Trivy
-*/}}
-{{- define "harbor.trivy.serviceAccountName" -}}
-{{- if .Values.trivy.serviceAccount.create -}}
-    {{ default (include "harbor.trivy" .) .Values.trivy.serviceAccount.name | trunc 63 | trimSuffix "-" }}
-{{- else -}}
-    {{ default "default" .Values.trivy.serviceAccount.name }}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Create the name of the service account to use for the Harbor Nginx
-*/}}
-{{- define "harbor.nginx.serviceAccountName" -}}
-{{- if .Values.nginx.serviceAccount.create -}}
-    {{ default (include "harbor.nginx" .) .Values.nginx.serviceAccount.name | trunc 63 | trimSuffix "-" }}
-{{- else -}}
-    {{ default "default" .Values.nginx.serviceAccount.name }}
-{{- end -}}
+{{/* Allow KubeVersion to be overridden. */}}
+{{- define "harbor.ingress.kubeVersion" -}}
+  {{- default .Capabilities.KubeVersion.Version .Values.expose.ingress.kubeVersionOverride -}}
 {{- end -}}
