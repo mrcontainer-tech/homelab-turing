@@ -8,8 +8,8 @@ A GitOps-managed Kubernetes homelab I built for learning, experimentation, and r
 |------|----------|--------------|------|-------|
 | node1 | Raspberry Pi CM4 | ARM64 | Control plane | Turing Pi v2.5 slot 1 |
 | node2 | Raspberry Pi CM4 | ARM64 | Control plane | Turing Pi v2.5 slot 2 |
-| node3 | Raspberry Pi CM4 | ARM64 | Control plane | Turing Pi v2.5 slot 3, SSD storage |
-| node4 | Raspberry Pi CM4 | ARM64 | Worker | Turing Pi v2.5 slot 4 |
+| node3 | Raspberry Pi CM4 | ARM64 | Control plane | Turing Pi v2.5 slot 3 |
+| node4 | Raspberry Pi CM4 | ARM64 | Worker | Turing Pi v2.5 slot 4,  SSD storage |
 | node5 | Dell XPS (refurbished) | x86_64 | Worker | NVIDIA GTX 1650 Ti GPU |
 
 The Turing Pi v2.5 hosts four CM4 modules in a compact form factor. Node5 extends the cluster with x86_64 compute and GPU capabilities for workloads that need more power or NVIDIA acceleration.

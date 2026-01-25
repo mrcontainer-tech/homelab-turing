@@ -1,0 +1,60 @@
+# Harbor values for node5 (AMD64)
+externalURL: https://harbor.mrcontainer.nl
+
+exposureType: proxy
+service:
+  type: ClusterIP
+
+# Disable chart-owned Ingress (using custom manifest)
+ingress:
+  enabled: false
+  core:
+    enabled: false
+  portal:
+    enabled: false
+
+# Scale down for resource constraints
+registry:
+  relativeurls: true
+  replicaCount: 1
+  nodeSelector:
+    kubernetes.io/hostname: node5
+
+jobservice:
+  replicaCount: 1
+  nodeSelector:
+    kubernetes.io/hostname: node5
+
+portal:
+  replicaCount: 1
+  nodeSelector:
+    kubernetes.io/hostname: node5
+
+core:
+  nodeSelector:
+    kubernetes.io/hostname: node5
+
+nginx:
+  tls:
+    enabled: false
+  nodeSelector:
+    kubernetes.io/hostname: node5
+
+trivy:
+  nodeSelector:
+    kubernetes.io/hostname: node5
+
+exporter:
+  nodeSelector:
+    kubernetes.io/hostname: node5
+
+# Database components on node5
+postgresql:
+  primary:
+    nodeSelector:
+      kubernetes.io/hostname: node5
+
+redis:
+  master:
+    nodeSelector:
+      kubernetes.io/hostname: node5
