@@ -93,10 +93,12 @@ data:
             href: https://harbor.mrcontainer.nl/
             description: Container registry
             icon: mdi-docker
+            siteMonitor: https://harbor.mrcontainer.nl/
         - Kyverno:
             href: https://policy-reporter.mrcontainer.nl/
             description: Policy engine
             icon: mdi-shield-check
+            siteMonitor: https://policy-reporter.mrcontainer.nl/
     - Observability:
         - Grafana:
             href: https://grafana.mrcontainer.nl/
