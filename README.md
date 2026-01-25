@@ -1,269 +1,100 @@
-# Homelab Turing Pi (mrcontainer-tech)
+# Homelab Kubernetes Cluster
 
-This repository bootstraps and manages your Turing Pi Kubernetes cluster via Argo CD. It defines two main directories:
+A GitOps-managed Kubernetes homelab I built for learning, experimentation, and running real workloads. Everything is declarative—this Git repository is the single source of truth, with ArgoCD handling continuous deployment.
+
+## Cluster Hardware
+
+| Node | Hardware | Architecture | Role | Notes |
+|------|----------|--------------|------|-------|
+| node1 | Raspberry Pi CM4 | ARM64 | Control plane | Turing Pi v2.5 slot 1 |
+| node2 | Raspberry Pi CM4 | ARM64 | Control plane | Turing Pi v2.5 slot 2 |
+| node3 | Raspberry Pi CM4 | ARM64 | Control plane | Turing Pi v2.5 slot 3, SSD storage |
+| node4 | Raspberry Pi CM4 | ARM64 | Worker | Turing Pi v2.5 slot 4 |
+| node5 | Dell XPS (refurbished) | x86_64 | Worker | NVIDIA GTX 1650 Ti GPU |
+
+The Turing Pi v2.5 hosts four CM4 modules in a compact form factor. Node5 extends the cluster with x86_64 compute and GPU capabilities for workloads that need more power or NVIDIA acceleration.
+
+## Repository Structure
 
 ```
 homelab-turing/
-├── core-components/   # Cluster-wide infra (charts + manifests)
-└── applications/      # End-user workloads and experiments
+├── core-components/       # Infrastructure layer (MetalLB, Longhorn, cert-manager, etc.)
+├── applications/          # Workloads (monitoring, media server, serverless functions)
+├── *-application-set.yaml # ArgoCD ApplicationSets for automatic discovery
+└── adr/                   # Architecture Decision Records
 ```
 
-## Overview
+## How It Works
 
-* **GitOps-driven**: This repo is your single source of truth.
-  Argo CD watches `main` and reconciles everything under `core-components/` and `applications/`.
-* **Cluster**: HA K3s on 4× Raspberry Pi CM4s (Turing Pi v2.5).
-* **Storage**: SSD on Node 3, managed by Longhorn.
+I use ArgoCD **ApplicationSets** to automatically discover and deploy components:
 
----
+1. ApplicationSets scan for `chart/` and `manifests/` directories
+2. Each discovered directory becomes an ArgoCD Application
+3. Changes pushed to Git trigger automatic sync with prune and self-heal
 
-## core-components/ (ApplicationSet)
-
-All foundational services (MetalLB CRDs & chart, Longhorn chart) are managed by a single Argo CD **ApplicationSet**. We vendor upstream Helm charts into `chart/` folders and raw manifests (e.g. CRDs) into `manifest/` folders. The ApplicationSet will:
-
-1. **Scan** `core-components/*/{chart,manifest}` directories
-2. **Generate** one child Application per sub-folder
-3. **Render** Helm charts (with `Chart.yaml` + `templates/`) and plain YAML
-
-### Directory structure
+### Component Structure
 
 ```
-core-components/
-├── metallb-system/
-│   ├── chart/     # vendored MetalLB Helm chart (Chart.yaml, templates/, values.yaml)
-│   └── manifest/  # raw YAML CRDs or bootstrapping manifests
-└── longhorn-system/
-    ├── chart/     # vendored Longhorn Helm chart
-    └── manifest/  # (optional) raw manifests if needed
+component-name/
+├── chart/       # Vendored Helm chart
+├── manifests/   # Raw Kubernetes YAML
+└── README.md    # Component documentation
 ```
 
-### ApplicationSet example
+Helm charts are vendored (committed to Git) so I have full visibility into what's deployed.
 
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: core-components
-  namespace: argocd
-spec:
-  # enable Go templating to turn .path maps into names & namespaces
-  goTemplate: true
-  goTemplateOptions: ["missingkey=error"]
+## Core Components
 
-  generators:
-  - git:
-      repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
-      revision: main
-      directories:
-        - path: core-components/*/chart
-        - path: core-components/*/manifest
+| Component | Purpose |
+|-----------|---------|
+| ArgoCD | GitOps controller |
+| MetalLB | Bare-metal load balancer |
+| Longhorn | Distributed block storage |
+| cert-manager | TLS certificate management |
+| external-dns | Automatic DNS (Route53) |
+| external-secrets | Secrets from external stores |
+| Knative Serving | Serverless platform |
+| Traefik | Ingress controller |
 
-  template:
-    metadata:
-      # example: path="core-components/metallb-system/chart"
-      # dir .path.path → "core-components/metallb-system"
-      # base(...) → "metallb-system"
-      # base .path.path → "chart" or "manifest"
-      name: '{{ base (dir .path.path) }}-{{ base .path.path }}'
-    spec:
-      project: default
-      source:
-        repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
-        targetRevision: main
-        path: '{{ .path.path }}'
-        # if this is a chart directory, Argo CD auto-detects Chart.yaml + templates/
-        # you can optionally be explicit:
-        # chart: '{{ base (dir .path.path) }}'
-        # helm:
-        #   releaseName: '{{ base (dir .path.path) }}'
-        #   valueFiles:
-        #     - values.yaml
-      destination:
-        server: https://kubernetes.default.svc
-        namespace: '{{ base (dir .path.path) }}'
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-```
+## Applications
 
-* **Helm charts**: Any directory under `chart/` containing a `Chart.yaml` and `templates/` is rendered as a Helm chart.
-* **Raw manifests**: Directories under `manifest/` are applied as plain YAML.
-* **Naming & namespaces**:
+| Application | Purpose |
+|-------------|---------|
+| kube-prometheus-stack | Monitoring (Prometheus + Grafana) |
+| media-server | Jellyfin + Jellyseerr |
+| functions | Knative serverless functions |
+| Harbor | Container registry |
+| Kyverno | Policy engine |
 
-  * App name → `<component>-<type>` (e.g. `metallb-system-chart`, `metallb-system-manifest`)
-  * Namespace → `<component>` (e.g. `metallb-system`, `longhorn-system`)
-
----
-
-## applications/
-
-Contains Argo CD **Application** YAMLs (or you can plug into another ApplicationSet) for all your end-user workloads:
-
-```
-applications/
-├── homeassistant/      # Home automation (Helm chart or Kustomize overlay)
-├── htpc/               # Plex / media server
-└── experiments/        # Playgrounds and tests
-```
-
-Each folder has its own `Application` manifest pointing to a chart or Kustomize directory, with its own `syncPolicy`.
-
----
-
-## Getting Started
-
-1. **Install Argo CD** (if not already):
-
-   ```bash
-   kubectl create namespace argocd
-   kubectl apply -n argocd \
-     -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-   ```
-2. **Connect your GitHub App** (see `/docs/github-app.md` for setup).
-3. **Apply the ApplicationSet** for core-components:
-
-   ```bash
-   kubectl apply -f core-components/appset-core-components.yaml
-   ```
-4. **Create root Application** (or use Argo CD UI) to kick off `applications/`:
-
-   ```bash
-   argocd app create homelab-turing \
-     --repo https://github.com/mrcontainer-tech/homelab-turing.git \
-     --path applications \
-     --dest-server https://kubernetes.default.svc \
-     --dest-namespace default \
-     --sync-policy automated --self-heal
-   ```
-5. **Sync**:
-
-   ```bash
-   argocd app sync core-components
-   argocd app sync homelab-turing
-   ```
-
----
-
-## Adding New Helm Charts
-
-To add a new Helm chart to **core‑components** or **applications** and ensure you can review every rendered resource:
-
-1. **Choose a component name**: decide if it belongs under `core-components` (cluster infra) or `applications` (workloads).
-2. **Create the target directory**:
-
-   * For core-components: `core-components/<component>-system/chart`
-   * For applications:  `applications/<component>/chart`
-3. **Add and update the Helm repo**:
-
-   ```bash
-   helm repo add <repo‑name> <repo‑url>
-   helm repo update
-   ```
-4. **Pull and unpack the chart**:
-
-   ```bash
-   helm pull <repo‑name>/<chart‑name> \
-     --version <chart‑version> \
-     --untar \
-     --untardir <path‑to‑chart>
-   ```
-
-   This populates the `chart/` directory with `Chart.yaml`, `templates/`, `values.yaml`, etc.
-5. **(Optional) Customize values**:
-
-   * Edit `chart/values.yaml` or add additional `values-*.yaml` files alongside.
-6. **Commit & push** your changes:
-
-   ```bash
-   git add <new chart directory>
-   git commit -m "vendor <chart-name> v<version> chart for <component>"
-   git push
-   ```
-
-On the next Argo CD sync, the full chart directory is treated as plain YAML so every rendered manifest is applied exactly as you have in Git—letting you review diffs directly in Git and in Argo CD.
-
-## Serverless Functions with Knative
-
-Knative Serving provides a CNCF graduated, production-grade serverless platform on Kubernetes with advanced traffic management and auto-scaling capabilities.
-
-### Quick Start
+## Quick Commands
 
 ```bash
-# Install Knative CLI
-brew install knative/client/kn  # macOS
+# ArgoCD
+argocd app list
+argocd app sync <app-name>
 
-# Get Kourier LoadBalancer IP
-export KOURIER_IP=$(kubectl get svc kourier -n kourier-system -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+# Check deployments
+kubectl get pods -A
+kubectl get applications -n argocd
 
-# Deploy a function
-cd applications/functions/python-etl-example
-docker build -t docker.io/username/python-etl-example:v1 .
-docker push docker.io/username/python-etl-example:v1
-kubectl apply -f service.yaml
-
-# Test it
-SERVICE_HOST=$(kubectl get ksvc python-etl-example -o jsonpath='{.status.url}' | sed 's|http://||')
-curl -X POST http://$KOURIER_IP \
-  -H "Host: $SERVICE_HOST" \
-  -H "Content-Type: application/json" \
-  -d '{"test": "data"}'
+# Knative functions
+kn service list
 ```
 
-### Development Workflow
+## Documentation
 
-The key benefit of Knative is automatic scaling and revision management:
+- `CLAUDE.md` — AI assistant guide and project conventions
+- `VISION.md` — Project philosophy and rationale
+- `TURING-INSTALL.md` — Initial cluster setup
+- `applications/functions/README.md` — Knative serverless guide
+- `adr/` — Architecture Decision Records
+
+## Known Issues
+
+**ArgoCD TLS**: Currently disabled via kubectl patch. TODO: Replace with proper Helm values.
 
 ```bash
-# 1. Make code changes
-vim handler.py
-
-# 2. Build and push
-docker build -t registry/function:v2 .
-docker push registry/function:v2
-
-# 3. Update service (creates new revision automatically)
-kn service update my-function --image registry/function:v2
-
-# 4. Test immediately (auto-scales from zero)
-curl -X POST http://$KOURIER_IP -H "Host: $SERVICE_HOST" -d '{"test": "data"}'
-```
-
-### Documentation
-
-- **Quick Start**: `applications/functions/QUICKSTART.md`
-- **Core Component**: `core-components/knative-serving/README.md`
-- **Examples**:
-  - Python ETL: `applications/functions/python-etl-example/`
-  - Go API Poller: `applications/functions/go-api-poller/`
-
-### Use Cases
-
-- ETL pipelines and data processing
-- API polling and monitoring
-- HTTP-triggered microservices
-- Event-driven applications
-- Scheduled jobs with scale-to-zero
-
-### Key Features
-
-- ✅ **CNCF Graduated**: Industry-standard serverless platform
-- ✅ **Scale-to-zero**: Automatically scale down to save resources
-- ✅ **Traffic splitting**: Blue/green and canary deployments
-- ✅ **Revision management**: Automatic versioning of deployments
-- ✅ **Auto-scaling**: Request-based autoscaling (KPA)
-- ✅ **Native K8s**: First-class Kubernetes integration
-
----
-
-## ArgoCD disabled internal TLS
-
-Disabled the internal TLS by doing a really beautiful thing, namely a `kubectl patch`. 
-
-```
 kubectl -n argocd patch deployment argocd-server \
   --type='json' \
   -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--insecure"}]'
 ```
-
-Solution would to do a `Helm install` with a proper values.yaml, so it can be committed to Git. This feels a bit hacky at the moment and should be replaced with a proper helm install & values.yaml file.
