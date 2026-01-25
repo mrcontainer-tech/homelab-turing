@@ -89,14 +89,12 @@ data:
             icon: http://longhorn.mrcontainer.nl/favicon.ico
             siteMonitor: https://longhorn.mrcontainer.nl/
     - Security:
-        # TODO: Enable Harbor ping and icon when service is deployed
         - Harbor:
             href: https://harbor.mrcontainer.nl/
             description: Container registry
             icon: mdi-docker
-        # TODO: Enable Kyverno ping and icon when service is deployed
         - Kyverno:
-            href: https://kyverno.mrcontainer.nl/
+            href: https://policy-reporter.mrcontainer.nl/
             description: Policy engine
             icon: mdi-shield-check
     - Observability:
