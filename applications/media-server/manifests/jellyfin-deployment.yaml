@@ -35,10 +35,10 @@ spec:
           resources:
             requests:
               cpu: "1000m"
-              memory: "3Gi"
+              memory: "4Gi"
             limits:
               cpu: "2000m"
-              memory: "5Gi"
+              memory: "6Gi"
           volumeMounts:
             - name: config
               mountPath: /config
