@@ -4,6 +4,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: prowlarr-config
   namespace: media
+  annotations:
+    numberOfReplicas: "1"
 spec:
   accessModes:
     - ReadWriteOnce
