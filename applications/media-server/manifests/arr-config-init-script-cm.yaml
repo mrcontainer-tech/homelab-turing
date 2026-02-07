@@ -13,6 +13,7 @@ data:
 
     APP_NAME="$1"
     API_KEY="$2"
+    APP_PORT="$3"
     CONFIG_FILE="/config/config.xml"
 
     echo "Initializing ${APP_NAME} configuration..."
@@ -31,7 +32,7 @@ data:
       <UpdateMechanism>Docker</UpdateMechanism>
       <Branch>main</Branch>
       <BindAddress>*</BindAddress>
-      <Port>0</Port>
+      <Port>${APP_PORT}</Port>
       <SslPort>0</SslPort>
       <EnableSsl>False</EnableSsl>
       <LaunchBrowser>False</LaunchBrowser>

@@ -21,7 +21,7 @@ spec:
       initContainers:
         - name: config-init
           image: busybox:1.36
-          command: ['sh', '/scripts/init-config.sh', 'Radarr', '$(RADARR_API_KEY)']
+          command: ['sh', '/scripts/init-config.sh', 'Radarr', '$(RADARR_API_KEY)', '7878']
           env:
             - name: RADARR_API_KEY
               valueFrom:
