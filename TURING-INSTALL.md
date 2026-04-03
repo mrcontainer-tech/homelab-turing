@@ -1,164 +1,220 @@
 # Homelab Turing Pi HA Kubernetes
 
-This guide walks through installing a High‑Availability (HA) K3s Kubernetes cluster on a Turing Pi (v2.5) using four Raspberry Pi CM4 modules.
+This guide walks through installing a High-Availability Talos Linux Kubernetes cluster on a Turing Pi v2.5 using four Raspberry Pi CM4 modules. Three nodes run as control plane, one as a worker.
 
-## 🛠 Prerequisites
+## Prerequisites
 
-* **Hardware**: Turing Pi with 4 CM4 slots, ITX case, power supply
-* **BMC access**: `turingpi` CLI and `rpiboot` installed on the BMC
-* **MicroSD**: Latest Raspberry Pi OS Lite image
-* **Network**: DHCP or static LAN (we use static IPs in this guide)
+* **Hardware**: Turing Pi v2.5 with 4 CM4 slots, ITX case, power supply
+* **BMC access**: `tpi` CLI available and SSH access to the BMC
+* **Network**: Static IPs assigned per node (configured in machine config)
+* **Tools**: `talosctl` and `kubectl` installed on your local machine
+* **Talos image**: Raspberry Pi ARM64 image from [factory.talos.dev](https://factory.talos.dev)
 
-## 1. Flash OS & Enable SSH/UART
+## Node Layout
 
-These commands are run from the **BMC**. SSH to it using 
+| Node | IP              | Role          |
+|------|-----------------|---------------|
+| node1 | 192.168.68.101 | Control plane |
+| node2 | 192.168.68.102 | Control plane |
+| node3 | 192.168.68.103 | Control plane |
+| node4 | 192.168.68.104 | Worker        |
 
-1. **Set the Raspberry to mass storage device and mount the boot partition**
+## 1. Flash Talos Image
 
-   ```bash
-   mount /dev/sda1 /mnt/bootfs
-   ```
-2. **Enable UART & SSH**
+Flash the Talos Raspberry Pi image to each node via the Turing Pi BMC. Run these from your local machine over SSH to the BMC, or directly on the BMC.
 
-   ```bash
-   # Edit config.txt
-   vi /mnt/bootfs/config.txt
-   # Add:
-   enable_uart=1
-
-   # Enable SSH on first boot
-   touch /mnt/bootfs/ssh
-
-   # Seed `pi` password via userconf
-   echo 'pi:$6$c70VpvPsVNCG0YR5$l5vWWLsLko9Kj65gcQ8qvMkuOoRkEagI90qi3F/Y7rm8eNYZHW8CY6BOIKwMH7a3YYzZYL90zf304cAHLFaZE0' \
-     > /mnt/bootfs/userconf
-   ```
-3. **Unmount & power‑cycle**
-
-   ```bash
-   umount /mnt/bootfs
-   tpi power -n 1 off
-   tpi power -n 1 on
-   ```
-4. **Verify serial console**
-
-   ```bash
-   tpi uart get -n 1
-   ```
-
-## 2. Enable cgroup memory
-
-K3s requires the memory cgroup (v2). On each node:
+Download the Talos image for Raspberry Pi:
 
 ```bash
-sudo cp /boot/firmware/cmdline.txt /boot/firmware/cmdline.txt.bak
-sudo sed -i 's/$/ cgroup_enable=memory cgroup_memory=1/' /boot/firmware/cmdline.txt
-sudo reboot
+# Download the Talos metal image for ARM64 (Raspberry Pi)
+curl -LO https://factory.talos.dev/image/factory/metal-arm64.raw.xz
 ```
 
-## 3. Set Hostnames
-
-On each node, replace `N` with the node number (1–4):
+Flash each node slot using the `tpi` CLI:
 
 ```bash
-sudo hostnamectl set-hostname nodeN
+tpi flash -n 1 -i metal-arm64.raw.xz
+tpi flash -n 2 -i metal-arm64.raw.xz
+tpi flash -n 3 -i metal-arm64.raw.xz
+tpi flash -n 4 -i metal-arm64.raw.xz
 ```
 
-## 4. Configure Static IPs (NetworkManager)
-
-Why static IPs? K3s (written in Go) uses its own DNS resolver which does not honor mDNS/Avahi, so any .local hostnames advertised only via Avahi will appear unresolvable to K3s. By assigning fixed static IP addresses (or mapping names in /etc/hosts), you ensure the API server and peers can always be reached reliably.
-
-On **each** Pi (node1–node4):
+Power cycle each node after flashing:
 
 ```bash
-# Identify your connection name:
-nmcli connection show
-
-# Modify it (example for node1):
-sudo nmcli connection modify "Wired connection 1" \
-  ipv4.method manual \
-  ipv4.addresses 192.168.68.10N/24 \
-  ipv4.gateway 192.168.68.1 \
-  ipv4.dns "192.168.68.1 8.8.8.8" \
-  connection.autoconnect yes
-
-# Bring it up:
-sudo nmcli connection up "Wired connection 1"
+tpi power -n 1 off && tpi power -n 1 on
+tpi power -n 2 off && tpi power -n 2 on
+tpi power -n 3 off && tpi power -n 3 on
+tpi power -n 4 off && tpi power -n 4 on
 ```
 
-Nodes:
+Nodes will boot into Talos maintenance mode, waiting for configuration to be applied.
 
-* node1 → `.101`
-* node2 → `.102`
-* node3 → `.103`
-* node4 → `.104`
+## 2. Generate Cluster Configuration
 
-## 5. Install K3s (HA control‑plane)
-
-### Node 1 (first master)
+Generate the base machine configs using `talosctl`. The VIP (`192.168.68.100`) provides a stable endpoint for the HA control plane:
 
 ```bash
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server \
-  --cluster-init \
-  --token <YOUR_TOKEN> \
-  --disable servicelb \
-  --disable local-storage \
-  --disable cloud-controller \
-  --tls-san 192.168.68.101 \
-  --tls-san 192.168.68.102 \
-  --tls-san 192.168.68.103 \
-  --tls-san 192.168.68.104 \
-  --tls-san node1.local \
-  --tls-san node2.local \
-  --tls-san node3.local \
-  --tls-san node4.local" sh -
+talosctl gen config homelab-turing https://192.168.68.100:6443 \
+  --output-dir _out
 ```
 
-### Node 2 & 3 (additional masters)
+This produces:
+- `_out/controlplane.yaml` — base config for control plane nodes
+- `_out/worker.yaml` — base config for worker nodes
+- `_out/talosconfig` — client config for `talosctl`
 
-Retrieve the **server token** on node1:
+## 3. Customize Node Configs
+
+Each node needs its own machine config with a static IP, hostname, and (for control plane nodes) a Virtual IP. Create a patch file per node and merge it into the base config.
+
+### Control plane patch (repeat for node1/node2/node3, adjusting hostname and address)
+
+**patch-node1.yaml**:
+```yaml
+machine:
+  network:
+    hostname: node1
+    interfaces:
+      - interface: eth0
+        dhcp: false
+        addresses:
+          - 192.168.68.101/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.68.1
+        vip:
+          ip: 192.168.68.100
+    nameservers:
+      - 192.168.68.1
+      - 8.8.8.8
+```
+
+Apply the patch to generate a per-node config:
 
 ```bash
-cat /var/lib/rancher/k3s/server/token
+talosctl machineconfig patch _out/controlplane.yaml \
+  --patch @patch-node1.yaml \
+  --output _out/node1.yaml
+
+talosctl machineconfig patch _out/controlplane.yaml \
+  --patch @patch-node2.yaml \
+  --output _out/node2.yaml
+
+talosctl machineconfig patch _out/controlplane.yaml \
+  --patch @patch-node3.yaml \
+  --output _out/node3.yaml
 ```
 
-On **node2** and **node3**:
+### Worker patch
+
+**patch-node4.yaml**:
+```yaml
+machine:
+  network:
+    hostname: node4
+    interfaces:
+      - interface: eth0
+        dhcp: false
+        addresses:
+          - 192.168.68.104/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.68.1
+    nameservers:
+      - 192.168.68.1
+      - 8.8.8.8
+  disks:
+    - device: /dev/sda
+      partitions:
+        - mountpoint: /var/mnt/storage
+```
+
+> The `disks` section mounts the USB SSD on node4 for Jellyfin media storage.
 
 ```bash
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server \
-  --server https://192.168.68.101:6443 \
-  --token <YOUR_TOKEN> \
-  --disable servicelb \
-  --disable local-storage \
-  --disable cloud-controller" sh -
+talosctl machineconfig patch _out/worker.yaml \
+  --patch @patch-node4.yaml \
+  --output _out/node4.yaml
 ```
 
-### Node 4 (agent)
+## 4. Apply Configuration
 
-The fourth node will function as a worker node, kubernetes works best in HA when there are at least three masters.
+Apply each node's config while nodes are in maintenance mode (`--insecure` is needed before TLS is established):
 
 ```bash
-curl -sfL https://get.k3s.io | \
-  K3S_URL="https://192.168.68.101:6443" \
-  K3S_TOKEN="<YOUR_TOKEN>" \
-  sh -
+talosctl apply-config --insecure --nodes 192.168.68.101 --file _out/node1.yaml
+talosctl apply-config --insecure --nodes 192.168.68.102 --file _out/node2.yaml
+talosctl apply-config --insecure --nodes 192.168.68.103 --file _out/node3.yaml
+talosctl apply-config --insecure --nodes 192.168.68.104 --file _out/node4.yaml
 ```
 
-## 6. Label Nodes
+Nodes will reboot and apply their configuration. Wait for them to come back up before continuing.
 
-We want each node to function as a worker node:
+## 5. Bootstrap the Cluster
+
+Bootstrap etcd on the first control plane node. This only needs to be done once:
 
 ```bash
-kubectl label node node1 node-role.kubernetes.io/worker=""
-kubectl label node node2 node-role.kubernetes.io/worker=""
-kubectl label node node3 node-role.kubernetes.io/worker=""
-kubectl label node node4 node-role.kubernetes.io/worker=""
+talosctl bootstrap \
+  --nodes 192.168.68.101 \
+  --endpoints 192.168.68.101 \
+  --talosconfig _out/talosconfig
 ```
+
+Wait for the control plane to become healthy before proceeding.
+
+## 6. Get kubeconfig
+
+```bash
+talosctl kubeconfig \
+  --nodes 192.168.68.101 \
+  --endpoints 192.168.68.101 \
+  --talosconfig _out/talosconfig
+```
+
+Verify the cluster is up:
+
+```bash
+kubectl get nodes
+```
+
+All four nodes should appear. node1–node3 as control-plane, node4 as worker.
 
 ## 7. Install ArgoCD
 
 ```bash
-kubectl create namespace argocd
-kubectl apply -n argocd -f \
-  https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+helm repo add argo https://argoproj.github.io/argo-helm
+helm repo update
+helm install argocd argo/argo-cd --namespace argocd --create-namespace
+```
+
+After installation, connect ArgoCD to this Git repository through the ArgoCD UI or CLI. Then apply the ApplicationSets to start syncing everything:
+
+```bash
+kubectl apply -f core-components-chart-application-set.yaml
+kubectl apply -f core-components-manifest-application-set.yaml
+kubectl apply -f applications-chart-application-set.yaml
+kubectl apply -f applications-manifest-application-set.yaml
+```
+
+ArgoCD will discover and deploy all components from this repository.
+
+## Useful talosctl Commands
+
+```bash
+# Check node health
+talosctl health --nodes 192.168.68.101 --endpoints 192.168.68.101
+
+# View logs
+talosctl logs --nodes 192.168.68.101 kubelet
+
+# Reboot a node
+talosctl reboot --nodes 192.168.68.101
+
+# Upgrade Talos on a node
+talosctl upgrade --nodes 192.168.68.101 --image ghcr.io/siderolabs/installer:<version>
+
+# Upgrade Kubernetes
+talosctl upgrade-k8s --nodes 192.168.68.101 --to <version>
 ```

@@ -25,3 +25,4 @@ A concise, lightweight decision log inspired by Architectural Decision Records (
 | D17 | 2026-04-03 | Migrate from k3s to Talos Linux                                         | Immutable OS, reduced maintenance, new hardware support. Supersedes D6, D7. See [D17-talos-migration.md](D17-talos-migration.md) |
 | D18 | 2026-04-03 | Adopt CloudNativePG for managed PostgreSQL                               | CNCF Sandbox, ARM64 native, replace Harbor internal DB. See [D18-cloudnativepg.md](D18-cloudnativepg.md) |
 | D19 | 2026-04-03 | CI system for homelab                                                    | Evaluate Woodpecker CI and Tekton for container builds. See [D19-ci-system.md](D19-ci-system.md) |
+| D16 | 2026-03-01 | Switch Kubernetes distribution from K3s to Talos                         | Immutable OS, declarative node config, reduced attack surface. See [D16-switch-to-talos.md](D16-switch-to-talos.md) |

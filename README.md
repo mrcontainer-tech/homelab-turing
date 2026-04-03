@@ -46,6 +46,7 @@ Helm charts are **not vendored** — they are referenced from upstream repositor
 
 | Component | Purpose |
 |-----------|---------|
+| Talos Linux | Immutable OS and Kubernetes distribution |
 | ArgoCD | GitOps controller |
 | MetalLB | Bare-metal load balancer |
 | Longhorn | Distributed block storage |
@@ -65,6 +66,25 @@ Helm charts are **not vendored** — they are referenced from upstream repositor
 | Kyverno | Policy engine |
 | Policy Reporter | Policy enforcement reporting |
 | Homepage | Homelab landing page |
+
+## Bootstrapping ArgoCD
+
+ArgoCD needs to be installed on the cluster before it can start syncing from this repository. This is a one-time bootstrap step after provisioning the Talos cluster:
+
+```bash
+helm repo add argo https://argoproj.github.io/argo-helm
+helm repo update
+helm install argocd argo/argo-cd --namespace argocd --create-namespace
+```
+
+After installation, connect ArgoCD to this Git repository through the ArgoCD UI or CLI. This is a manual configuration step. Once the repository is configured, apply the ApplicationSets so it can discover and manage everything in this repo:
+
+```bash
+kubectl apply -f core-components-chart-application-set.yaml
+kubectl apply -f core-components-manifest-application-set.yaml
+kubectl apply -f applications-chart-application-set.yaml
+kubectl apply -f applications-manifest-application-set.yaml
+```
 
 ## Quick Commands
 

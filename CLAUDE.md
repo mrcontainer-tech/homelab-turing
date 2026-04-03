@@ -160,7 +160,7 @@ kubectl apply --dry-run=client -f core-components/<component>/manifests/
 |-----------|---------|-------|
 | **ArgoCD** | GitOps controller | Currently uses kubectl patch for TLS config (TODO: Helm install) |
 | **MetalLB** | Load balancer | Provides LoadBalancer IPs on bare metal |
-| **Traefik** | Ingress controller | Default with K3s |
+| **Traefik** | Ingress controller | Deployed separately (not bundled with Talos) |
 | **Longhorn** | Block storage | SSD on Node 3, S3 backup |
 | **cert-manager** | Certificate management | Route53 DNS-01 challenge |
 | **external-dns** | DNS automation | Route53 integration |
