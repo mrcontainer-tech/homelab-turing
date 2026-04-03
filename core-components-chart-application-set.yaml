@@ -7,29 +7,48 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
-    - git:
-        repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
-        revision: main
-        directories:
-          - path: core-components/*/chart
+    - list:
+        elements:
+          - name: cert-manager
+            chart: cert-manager
+            repoURL: https://charts.jetstack.io
+            version: v1.18.0
+          - name: external-dns
+            chart: external-dns
+            repoURL: https://kubernetes-sigs.github.io/external-dns/
+            version: "1.17.0"
+          - name: external-secrets
+            chart: external-secrets
+            repoURL: https://charts.external-secrets.io
+            version: 0.18.1
+          - name: metallb-system
+            chart: metallb
+            repoURL: https://metallb.github.io/metallb
+            version: 0.15.2
+          - name: longhorn-system
+            chart: longhorn
+            repoURL: https://charts.longhorn.io
+            version: 1.8.2
   template:
     metadata:
-      # e.g. path="core-components/metallb/chart" → name="metallb-chart"
-      name: '{{ base (dir .path.path) }}-{{ base .path.path }}'
+      # e.g. name="cert-manager-chart"
+      name: '{{ .name }}-chart'
     spec:
-      # Using the default project for now
       project: default
-      source:
-        repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
-        targetRevision: main
-        path: '{{ .path.path }}'
-        helm:
-          # merge in ../values.yaml from each component folder
-          valueFiles:
-            - ../values.yaml
+      sources:
+        - repoURL: '{{ .repoURL }}'
+          chart: '{{ .chart }}'
+          targetRevision: '{{ .version }}'
+          helm:
+            releaseName: '{{ .chart }}'
+            valueFiles:
+              - $values/core-components/{{ .name }}/values.yaml
+        - repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
+          targetRevision: main
+          ref: values
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{ base (dir .path.path) }}'
+        namespace: '{{ .name }}'
       syncPolicy:
         automated:
           prune: true
@@ -37,4 +56,3 @@ spec:
         syncOptions:
           - CreateNamespace=false
           - ServerSideApply=true
-

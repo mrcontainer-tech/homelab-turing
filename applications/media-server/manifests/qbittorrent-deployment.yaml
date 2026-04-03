@@ -19,7 +19,7 @@ spec:
         kubernetes.io/hostname: node4
       containers:
         - name: gluetun
-          image: qmcgaw/gluetun:latest
+          image: qmcgaw/gluetun:v3.41.1
           securityContext:
             capabilities:
               add:
@@ -63,6 +63,13 @@ spec:
               mountPath: /gluetun/auth/config.toml
               subPath: config.toml
               readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 512Mi
           readinessProbe:
             httpGet:
               path: /v1/publicip/ip
@@ -101,6 +108,13 @@ spec:
               mountPath: /config
             - name: downloads
               mountPath: /downloads
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
           readinessProbe:
             httpGet:
               path: /

@@ -7,29 +7,44 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
-    - git:
-        repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
-        revision: main
-        directories:
-          - path: applications/*/chart
-
+    - list:
+        elements:
+          - name: harbor
+            chart: harbor
+            repoURL: https://helm.goharbor.io
+            version: 1.18.1
+          - name: kube-prometheus-stack
+            chart: kube-prometheus-stack
+            repoURL: https://prometheus-community.github.io/helm-charts
+            version: 75.7.0
+          - name: kyverno
+            chart: kyverno
+            repoURL: https://kyverno.github.io/kyverno/
+            version: 3.6.2
+          - name: policy-reporter
+            chart: policy-reporter
+            repoURL: https://kyverno.github.io/policy-reporter
+            version: 3.7.1
   template:
     metadata:
-      # e.g. path="core-components/metallb/chart" → name="metallb-chart"
-      name: '{{ base (dir .path.path) }}-{{ base .path.path }}'
+      # e.g. name="harbor-chart"
+      name: '{{ .name }}-chart'
     spec:
       project: default
-      source:
-        repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
-        targetRevision: main
-        path: '{{ .path.path }}'
-        helm:
-          # merge in ../values.yaml from each component folder
-          valueFiles:
-            - ../values.yaml
+      sources:
+        - repoURL: '{{ .repoURL }}'
+          chart: '{{ .chart }}'
+          targetRevision: '{{ .version }}'
+          helm:
+            releaseName: '{{ .chart }}'
+            valueFiles:
+              - $values/applications/{{ .name }}/values.yaml
+        - repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
+          targetRevision: main
+          ref: values
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{ base (dir .path.path) }}'
+        namespace: '{{ .name }}'
       syncPolicy:
         automated:
           prune: true

@@ -181,74 +181,16 @@ While cloudflared (Option 1) would have been simpler, the requirement to avoid s
 
 If this decision is accepted:
 
-1. Create `core-components/cloudflared/` directory structure
-2. Deploy cloudflared as a Deployment with 2 replicas for HA
+1. Create `core-components/dnscrypt-proxy/` directory structure
+2. Deploy dnscrypt-proxy as a Deployment with 2 replicas for HA
 3. Create ClusterIP Service exposing DNS (UDP/TCP 53)
-4. Update CoreDNS ConfigMap to forward to cloudflared service
-5. Test DNS resolution and verify encryption (packet capture or DoH logs)
-
-### Example cloudflared Deployment
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: cloudflared
-  namespace: kube-system
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: cloudflared
-  template:
-    metadata:
-      labels:
-        app: cloudflared
-    spec:
-      containers:
-      - name: cloudflared
-        image: cloudflare/cloudflared:latest
-        args:
-        - proxy-dns
-        - --port=5053
-        - --upstream=https://1.1.1.1/dns-query
-        - --upstream=https://1.0.0.1/dns-query
-        ports:
-        - containerPort: 5053
-          protocol: UDP
-        - containerPort: 5053
-          protocol: TCP
-        resources:
-          requests:
-            memory: "32Mi"
-            cpu: "10m"
-          limits:
-            memory: "64Mi"
-            cpu: "100m"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: cloudflared
-  namespace: kube-system
-spec:
-  selector:
-    app: cloudflared
-  ports:
-  - name: dns-udp
-    port: 53
-    targetPort: 5053
-    protocol: UDP
-  - name: dns-tcp
-    port: 53
-    targetPort: 5053
-    protocol: TCP
-```
+4. Update CoreDNS ConfigMap to forward to dnscrypt-proxy service
+5. Test DNS resolution and verify encryption
 
 ### Updated CoreDNS Forward
 
 ```
-forward . cloudflared.kube-system.svc.cluster.local
+forward . dnscrypt-proxy.dnscrypt-proxy.svc.cluster.local
 ```
 
 ---

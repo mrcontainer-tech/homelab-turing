@@ -60,17 +60,25 @@ For block storage and Disaster Recovery:
 
 For Databases:
 
-- Enterprise Postgres Operator
+- CloudNativePG (proposed — see D18)
 
 For DNS:
 
 - CoreDNS
 - ExternalDNS (Route53)
+- dnscrypt-proxy (encrypted DNS)
 
-For Serverless & Functions:
+For CI/CD:
 
-- Knative Serving (CNCF graduated serverless platform)
+- Tekton (proposed — see D19)
 
 ### Applications
 
 Applications are the end-user workloads and services running on the cluster. These showcase practical use cases and development workflows.
+
+- Homepage (homelab landing page)
+- Media Server (Jellyfin, Jellyseerr, Sonarr, Radarr, Prowlarr, Bazarr, qBittorrent)
+- Harbor (container registry and proxy cache)
+- Kyverno (policy engine)
+- Policy Reporter (policy enforcement reporting)
+- Kube Prometheus Stack (Prometheus + Grafana monitoring)

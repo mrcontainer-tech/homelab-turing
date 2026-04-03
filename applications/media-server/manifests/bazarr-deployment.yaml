@@ -65,6 +65,18 @@ spec:
             - name: media
               mountPath: /movies
               subPath: movies
+          readinessProbe:
+            httpGet:
+              path: /api/system/health
+              port: 6767
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/system/health
+              port: 6767
+            initialDelaySeconds: 30
+            periodSeconds: 30
           resources:
             requests:
               cpu: 50m

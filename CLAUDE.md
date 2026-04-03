@@ -21,23 +21,23 @@ homelab-turing/
 │   ├── cert-manager/
 │   ├── external-dns/
 │   ├── external-secrets/
-│   ├── knative-serving/
+│   ├── dnscrypt-proxy/
 │   ├── coredns/
 │   └── namespaces/
 │
 ├── applications/              # Workload layer
 │   ├── kube-prometheus-stack/ # Monitoring
 │   ├── media-server/          # Jellyfin, Jellyseerr
-│   ├── functions/             # Knative serverless functions
 │   ├── harbor/                # Container registry
 │   ├── kyverno/               # Policy engine
-│   ├── mariadb/
+│   ├── policy-reporter/       # Policy enforcement reporting
+│   ├── homepage/              # Homelab landing page
 │   └── tokito/
 │
-├── core-components-chart-application-set.yaml
-├── core-components-manifest-application-set.yaml
-├── applications-chart-application-set.yaml
-└── applications-manifest-application-set.yaml
+├── core-components-chart-application-set.yaml    # List generator: remote Helm charts
+├── core-components-manifest-application-set.yaml  # Git generator: raw YAML manifests
+├── applications-chart-application-set.yaml        # List generator: remote Helm charts
+└── applications-manifest-application-set.yaml     # Git generator: raw YAML manifests
 ```
 
 ---
@@ -48,18 +48,16 @@ This project uses **ApplicationSets** to automatically discover and deploy compo
 
 ### How It Works
 
-1. **ApplicationSets** scan the repository for directories matching patterns:
-   - `core-components/*/chart` - Helm charts
-   - `core-components/*/manifest` - Raw YAML manifests
-   - `applications/*/chart` - Application Helm charts
-   - `applications/*/manifests` - Application manifests
+1. **ApplicationSets** deploy components using two patterns:
+   - **Helm charts**: List generator with multi-source — chart from remote Helm repo, values from Git
+   - **Manifests**: Git generator scanning `core-components/*/manifests/` and `applications/*/manifests/`
 
-2. **For each discovered directory**, ArgoCD creates a child Application:
+2. **For each component**, ArgoCD creates a child Application:
    - Name: `<component>-<type>` (e.g., `metallb-system-chart`)
    - Namespace: `<component>` (e.g., `metallb-system`)
    - Auto-sync enabled with prune and self-heal
 
-3. **Helm charts** are vendored (committed to Git) for full visibility
+3. **Helm charts** are referenced from remote repositories (not vendored) with values in Git
 
 ### Directory Conventions
 
@@ -67,9 +65,8 @@ Each component follows this structure:
 
 ```
 component-name/
-├── chart/              # Vendored Helm chart (Chart.yaml, templates/, values.yaml)
-├── manifests/          # Raw YAML files (CRDs, configs)
-├── values.yaml         # (Optional) Additional values override
+├── manifests/          # Raw YAML files (CRDs, configs, namespace)
+├── values.yaml         # Helm values override (referenced by multi-source ApplicationSet)
 └── README.md           # Component documentation
 ```
 
@@ -81,57 +78,47 @@ component-name/
 
 1. **Create directory structure**:
    ```bash
-   mkdir -p core-components/<component-name>/{chart,manifests}
+   mkdir -p core-components/<component-name>/manifests
    ```
 
-2. **Vendor the Helm chart** (if using Helm):
-   ```bash
-   helm repo add <repo-name> <repo-url>
-   helm repo update
-   helm pull <repo-name>/<chart-name> \
-     --version <version> \
-     --untar \
-     --untardir core-components/<component-name>/chart
-   ```
+2. **For Helm charts** — add entry to the appropriate ApplicationSet:
+   - Add element to the list generator in `core-components-chart-application-set.yaml`
+   - Include: name, chart, repoURL, version
+   - Create `core-components/<component-name>/values.yaml` with custom overrides
 
-3. **Customize values** (optional):
-   - Edit `chart/values.yaml` or create `values.yaml` alongside
+3. **Add manifests** (if needed):
+   - Place CRDs, namespace, or additional YAML in `manifests/`
 
-4. **Add manifests** (if needed):
-   - Place CRDs or additional YAML in `manifests/`
-
-5. **Review and commit** (user responsibility):
+4. **Review and commit** (user responsibility):
    - User will review changes and commit to Git
    - Suggested commit message: `feat: Add <component-name>`
 
-6. **After Git push, ArgoCD will automatically**:
-   - Detect the new directories
+5. **After Git push, ArgoCD will automatically**:
+   - Detect the new entries/directories
    - Create Application(s)
    - Deploy to the cluster
 
 ### Adding a New Application
 
-Same process as core components, but use `applications/` directory:
+Same process as core components, but use `applications/` directory and `applications-chart-application-set.yaml`.
 
-```bash
-mkdir -p applications/<app-name>/{chart,manifests}
-# ... follow steps above
-```
+### Updating a Helm Chart Version
 
-### Updating an Existing Component
-
-1. **Make changes** to chart files or manifests
-2. **User reviews and commits** changes to Git
-3. **After push, ArgoCD auto-syncs** (prune + self-heal enabled)
+1. **Update the version** in the relevant ApplicationSet file (`*-chart-application-set.yaml`)
+2. **Adjust values.yaml** if the new chart version requires changes
+3. **User reviews and commits** changes to Git
+4. **After push, ArgoCD auto-syncs** (prune + self-heal enabled)
 
 ### Testing Before Commit
 
 ```bash
-# Render Helm chart locally
-helm template <release-name> core-components/<component>/chart \
-  -f core-components/<component>/chart/values.yaml
+# Render Helm chart from remote repo with local values
+helm repo add <repo-name> <repo-url>
+helm template <release-name> <repo-name>/<chart-name> \
+  --version <version> \
+  -f core-components/<component>/values.yaml
 
-# Validate YAML
+# Validate manifest YAML
 kubectl apply --dry-run=client -f core-components/<component>/manifests/
 ```
 
@@ -145,12 +132,13 @@ kubectl apply --dry-run=client -f core-components/<component>/manifests/
 - **Applications**: Use descriptive names (e.g., `media-server`, `kube-prometheus-stack`)
 - **Namespaces**: Match the component name
 
-### Helm Chart Vendoring
+### Helm Charts (Multi-Source)
 
-**Always vendor charts** (commit them to Git):
-- Provides full visibility into what's deployed
-- Enables Git-based review of template changes
-- Avoids external dependencies during sync
+**Charts are referenced from remote Helm repositories** (not vendored):
+- ArgoCD multi-source ApplicationSets pull charts from upstream repos
+- Only `values.yaml` overrides are stored in Git
+- Chart name, repo URL, and version are defined in the ApplicationSet list generator
+- To update a chart version, change `version` in the ApplicationSet
 
 ### Namespace Management
 
@@ -159,9 +147,8 @@ kubectl apply --dry-run=client -f core-components/<component>/manifests/
 
 ### Values Files
 
-- Primary values: `chart/values.yaml` (within vendored chart)
-- Overrides: `values.yaml` at component root (optional)
-- Environment-specific: Consider separate values files if needed
+- `values.yaml` at component root — custom overrides for the remote Helm chart
+- Chart defaults come from the upstream Helm repository
 
 ---
 
@@ -179,7 +166,7 @@ kubectl apply --dry-run=client -f core-components/<component>/manifests/
 | **external-dns** | DNS automation | Route53 integration |
 | **external-secrets** | Secrets management | Sync from external sources |
 | **CoreDNS** | DNS | Custom config to avoid Tailscale DNS |
-| **Knative Serving** | Serverless platform | CNCF graduated, scale-to-zero functions |
+| **dnscrypt-proxy** | Encrypted DNS | Multi-provider DoH/DNSCrypt |
 
 ### Applications
 
@@ -189,31 +176,8 @@ kubectl apply --dry-run=client -f core-components/<component>/manifests/
 | **Harbor** | Container registry |
 | **Kyverno** | Policy engine |
 | **media-server** | Jellyfin + Jellyseerr |
-| **functions** | Knative serverless functions (Python ETL, Go API poller) |
-| **MariaDB** | Database |
-
----
-
-## Knative Serverless Functions
-
-Located in `applications/functions/`, this project uses Knative Serving for serverless workloads:
-
-- **Auto-scaling**: Scale to zero when idle
-- **Revision management**: Automatic versioning
-- **Traffic splitting**: Blue/green and canary deployments
-- **Examples**: Python ETL, Go API poller
-
-**Quick reference**:
-```bash
-# Deploy function
-kubectl apply -f applications/functions/<function-name>/service.yaml
-
-# Test (get URL from service)
-SERVICE_URL=$(kubectl get ksvc <function-name> -o jsonpath='{.status.url}')
-curl -X POST $SERVICE_URL -H "Content-Type: application/json" -d '{"test": "data"}'
-```
-
-See `applications/functions/QUICKSTART.md` for details.
+| **Policy Reporter** | Policy enforcement reporting |
+| **Homepage** | Homelab landing page |
 
 ---
 
@@ -246,6 +210,12 @@ The user will handle all Git operations manually. Your role is to:
 
 This ensures the user maintains full control over what enters the Git history.
 
+### CRITICAL: kubectl is READ-ONLY
+
+**Only use `kubectl get`, `kubectl describe`, `kubectl logs`, and other read operations.**
+
+**NEVER use `kubectl apply`, `kubectl delete`, `kubectl patch`, `kubectl edit`, or any command that modifies cluster state.** All cluster changes must go through GitOps (commit to Git → ArgoCD syncs).
+
 ---
 
 ### Additional Use Cases
@@ -261,8 +231,8 @@ When troubleshooting, ask for logs/output, suggest diagnostic commands, and cons
 ### When Adding/Modifying Components
 
 1. **Always check existing patterns** before creating new structures
-2. **Follow the directory conventions** (chart/ and manifests/)
-3. **Vendor Helm charts** - never use remote chart references
+2. **Follow the directory conventions** (manifests/ and values.yaml)
+3. **Reference Helm charts from remote repos** — add to the ApplicationSet list generator
 4. **Test locally** with `helm template` or `kubectl apply --dry-run`
 5. **Document changes** in component README.md
 6. **Inform the user** of all changes made for their review
@@ -297,18 +267,14 @@ argocd app sync <app-name>
 kubectl get appset -n argocd
 kubectl get applications -n argocd
 
-# Knative functions
-kn service list
-kn revision list
-
 # Kubernetes debugging
 kubectl get pods -A
 kubectl get events -A --sort-by='.lastTimestamp'
 kubectl describe <resource> <name> -n <namespace>
 
-# Helm operations (local testing)
-helm template <name> <chart-path> -f values.yaml
-helm lint <chart-path>
+# Helm operations (local testing with remote charts)
+helm repo add <repo-name> <repo-url>
+helm template <name> <repo-name>/<chart> --version <ver> -f values.yaml
 ```
 
 ---
@@ -325,4 +291,3 @@ The `adr/` directory contains architectural decisions. Check there for context o
 - `README.md` - Quick start and operational guide
 - `TURING-INSTALL.md` - Initial cluster setup
 - Component-specific: `core-components/<component>/README.md`
-- Functions: `applications/functions/QUICKSTART.md`

@@ -32,6 +32,18 @@ spec:
                   key: TZ
             - name: JELLYFIN_CACHE_DIR
               value: /cache
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8096
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8096
+            initialDelaySeconds: 30
+            periodSeconds: 30
           resources:
             requests:
               cpu: "1000m"

@@ -1,4 +1,4 @@
-# Harbor values for official goharbor chart on node5 (AMD64)
+# Harbor values for official goharbor chart on ARM64
 # Chart: harbor/harbor v1.18.1
 # App: Harbor v2.14.1
 
@@ -28,47 +28,27 @@ persistence:
         storageClass: "longhorn"
         size: 1Gi
 
-# All components scheduled on node5 (AMD64)
-portal:
-  nodeSelector:
-    kubernetes.io/hostname: node5
+portal: {}
 
-core:
-  nodeSelector:
-    kubernetes.io/hostname: node5
+core: {}
 
-jobservice:
-  nodeSelector:
-    kubernetes.io/hostname: node5
+jobservice: {}
 
-registry:
-  nodeSelector:
-    kubernetes.io/hostname: node5
+registry: {}
 
 trivy:
   enabled: true
-  nodeSelector:
-    kubernetes.io/hostname: node5
 
-exporter:
-  nodeSelector:
-    kubernetes.io/hostname: node5
+exporter: {}
 
-nginx:
-  nodeSelector:
-    kubernetes.io/hostname: node5
+nginx: {}
 
-# Internal database on node5
+# Internal database
 database:
   type: internal
   internal:
-    nodeSelector:
-      kubernetes.io/hostname: node5
     password: "changeit"  # TODO: Use external-secrets
 
-# Internal Redis on node5
+# Internal Redis
 redis:
   type: internal
-  internal:
-    nodeSelector:
-      kubernetes.io/hostname: node5

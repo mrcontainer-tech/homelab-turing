@@ -10,17 +10,16 @@ A GitOps-managed Kubernetes homelab I built for learning, experimentation, and r
 | node2 | Raspberry Pi CM4 | ARM64 | Control plane | Turing Pi v2.5 slot 2 |
 | node3 | Raspberry Pi CM4 | ARM64 | Control plane | Turing Pi v2.5 slot 3 |
 | node4 | Raspberry Pi CM4 | ARM64 | Worker | Turing Pi v2.5 slot 4,  SSD storage |
-| node5 | Dell XPS (refurbished) | x86_64 | Worker | NVIDIA GTX 1650 Ti GPU |
 
-The Turing Pi v2.5 hosts four CM4 modules in a compact form factor. Node5 extends the cluster with x86_64 compute and GPU capabilities for workloads that need more power or NVIDIA acceleration.
+The Turing Pi v2.5 hosts four CM4 modules in a compact form factor.
 
 ## Repository Structure
 
 ```
 homelab-turing/
 ├── core-components/       # Infrastructure layer (MetalLB, Longhorn, cert-manager, etc.)
-├── applications/          # Workloads (monitoring, media server, serverless functions)
-├── *-application-set.yaml # ArgoCD ApplicationSets for automatic discovery
+├── applications/          # Workloads (monitoring, media server)
+├── *-application-set.yaml # ArgoCD ApplicationSets (list + git generators)
 └── adr/                   # Architecture Decision Records
 ```
 
@@ -28,20 +27,20 @@ homelab-turing/
 
 I use ArgoCD **ApplicationSets** to automatically discover and deploy components:
 
-1. ApplicationSets scan for `chart/` and `manifests/` directories
-2. Each discovered directory becomes an ArgoCD Application
-3. Changes pushed to Git trigger automatic sync with prune and self-heal
+1. **Helm charts** — Multi-source ApplicationSets using a **list generator**. Each entry defines the chart name, remote Helm repo URL, and version. ArgoCD pulls the chart from the upstream repo and merges it with `values.yaml` from this Git repository.
+2. **Manifests** — Git generator ApplicationSets scan for `manifests/` directories and deploy raw Kubernetes YAML.
+3. Changes pushed to Git trigger automatic sync with prune and self-heal.
 
 ### Component Structure
 
 ```
 component-name/
-├── chart/       # Vendored Helm chart
-├── manifests/   # Raw Kubernetes YAML
+├── manifests/   # Raw Kubernetes YAML (namespace, CRDs, configs)
+├── values.yaml  # Custom Helm values (chart itself comes from remote repo)
 └── README.md    # Component documentation
 ```
 
-Helm charts are vendored (committed to Git) so I have full visibility into what's deployed.
+Helm charts are **not vendored** — they are referenced from upstream repositories. Only custom value overrides are stored in Git. To update a chart version, change the `version` field in the ApplicationSet.
 
 ## Core Components
 
@@ -53,7 +52,7 @@ Helm charts are vendored (committed to Git) so I have full visibility into what'
 | cert-manager | TLS certificate management |
 | external-dns | Automatic DNS (Route53) |
 | external-secrets | Secrets from external stores |
-| Knative Serving | Serverless platform |
+| dnscrypt-proxy | Encrypted DNS |
 | Traefik | Ingress controller |
 
 ## Applications
@@ -62,9 +61,10 @@ Helm charts are vendored (committed to Git) so I have full visibility into what'
 |-------------|---------|
 | kube-prometheus-stack | Monitoring (Prometheus + Grafana) |
 | media-server | Jellyfin + Jellyseerr |
-| functions | Knative serverless functions |
 | Harbor | Container registry |
 | Kyverno | Policy engine |
+| Policy Reporter | Policy enforcement reporting |
+| Homepage | Homelab landing page |
 
 ## Quick Commands
 
@@ -76,9 +76,6 @@ argocd app sync <app-name>
 # Check deployments
 kubectl get pods -A
 kubectl get applications -n argocd
-
-# Knative functions
-kn service list
 ```
 
 ## Documentation
@@ -86,7 +83,6 @@ kn service list
 - `CLAUDE.md` — AI assistant guide and project conventions
 - `VISION.md` — Project philosophy and rationale
 - `TURING-INSTALL.md` — Initial cluster setup
-- `applications/functions/README.md` — Knative serverless guide
 - `adr/` — Architecture Decision Records
 
 ## Known Issues

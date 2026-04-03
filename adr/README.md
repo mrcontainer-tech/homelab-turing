@@ -21,3 +21,7 @@ A concise, lightweight decision log inspired by Architectural Decision Records (
 | D13 | 2025-12-31 | Improve home media setup                                                  | Working JellyFin, Jellyseerr, Sonarr, etc.                       |
 | D14 | 2026-01-01 | Media app credentials managed manually, not committed to Git             | Created `-creds.yaml` files (gitignored) with init containers for API key persistence. Applied manually via kubectl until external-secrets backend is configured. |
 | D15 | 2026-01-20 | Implement encrypted DNS using dnscrypt-proxy                             | Multi-provider DoH/DNSCrypt support. See [D15-encrypted-dns.md](D15-encrypted-dns.md) |
+| D16 | 2026-04-03 | Migrate Harbor to ARM64                                                  | Node5 decommissioned; switch to Bitnami chart for ARM support. See [D16-harbor-on-arm.md](D16-harbor-on-arm.md) |
+| D17 | 2026-04-03 | Migrate from k3s to Talos Linux                                         | Immutable OS, reduced maintenance, new hardware support. Supersedes D6, D7. See [D17-talos-migration.md](D17-talos-migration.md) |
+| D18 | 2026-04-03 | Adopt CloudNativePG for managed PostgreSQL                               | CNCF Sandbox, ARM64 native, replace Harbor internal DB. See [D18-cloudnativepg.md](D18-cloudnativepg.md) |
+| D19 | 2026-04-03 | CI system for homelab                                                    | Evaluate Woodpecker CI and Tekton for container builds. See [D19-ci-system.md](D19-ci-system.md) |
