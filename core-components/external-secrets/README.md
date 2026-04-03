@@ -35,7 +35,7 @@ A `ClusterSecretStore` named `aws-secrets-manager` is defined in `manifests/clus
 To sync a secret from AWS Secrets Manager into a Kubernetes namespace:
 
 ```yaml
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   name: my-app-secret
