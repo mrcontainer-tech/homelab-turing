@@ -1,4 +1,4 @@
-# D16: Harbor Migration to ARM64
+# D20: Harbor Migration to ARM64
 
 **Date**: 2026-04-03
 **Status**: Accepted

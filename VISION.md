@@ -58,7 +58,7 @@ For block storage and Disaster Recovery:
 
 For Databases:
 
-- CloudNativePG (proposed — see D18)
+- CloudNativePG (proposed — see D17)
 
 For DNS:
 
@@ -68,7 +68,7 @@ For DNS:
 
 For CI/CD:
 
-- Tekton (proposed — see D19)
+- Tekton (proposed — see D18)
 
 ### Applications
 

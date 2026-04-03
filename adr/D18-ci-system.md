@@ -1,4 +1,4 @@
-# D19: CI System for Homelab
+# D18: CI System for Homelab
 
 **Date**: 2026-04-03
 **Status**: Accepted
@@ -13,7 +13,7 @@ The cluster has no CI pipeline for building container images, running tests, or 
 - Knative function images are built locally or externally
 - No automated build-on-push workflow exists
 - Harbor acts as a pull-through cache and registry, but nothing pushes to it automatically
-- The planned Talos migration (D17) adds urgency — machine configs and images may need automated validation
+- The planned Talos migration (D16) adds urgency — machine configs and images may need automated validation
 
 A CI system running on the homelab would complete the GitOps loop: code push → build → test → push to Harbor → ArgoCD deploys.
 
@@ -163,7 +163,7 @@ Self-hosted CI integrated with Forgejo (GitHub Actions-compatible syntax).
 1. **CNCF Incubating**: Aligns with the project's CNCF ecosystem philosophy
 2. **Kubernetes-native**: Pipelines are CRDs, runs are Pods — fully declarative and GitOps-compatible
 3. **ARM64 support**: Full native support with documented multi-arch builds
-4. **Scalability**: Scales naturally with Kubernetes, ready for hardware expansion (D17)
+4. **Scalability**: Scales naturally with Kubernetes, ready for hardware expansion (D16)
 5. **Kaniko integration**: Rootless image builds without Docker-in-Docker privilege escalation
 
 The higher resource footprint and learning curve are acceptable trade-offs given the project's focus on learning and CNCF alignment. The planned hardware expansion (Jetson Orin NX, Turing RK1) will provide additional capacity.
@@ -189,4 +189,4 @@ The higher resource footprint and learning curve are acceptable trade-offs given
 - [Woodpecker Homelab Setup](https://pwa.io/articles/installing-woodpecker-in-your-homelab/)
 - [Drone CI](https://www.drone.io/)
 - [Forgejo Actions](https://forgejo.org/docs/next/admin/actions/)
-- D17: Talos migration (hardware expansion context)
+- D16: Talos migration (hardware expansion context)

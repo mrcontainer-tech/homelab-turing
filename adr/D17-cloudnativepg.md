@@ -1,4 +1,4 @@
-# D18: CloudNativePG Operator for PostgreSQL
+# D17: CloudNativePG Operator for PostgreSQL
 
 **Date**: 2026-04-03
 **Status**: Proposed

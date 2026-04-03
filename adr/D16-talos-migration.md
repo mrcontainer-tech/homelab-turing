@@ -1,4 +1,4 @@
-# D17: Migration from k3s to Talos Linux
+# D16: Migration from k3s to Talos Linux
 
 **Date**: 2026-04-03
 **Status**: Proposed
