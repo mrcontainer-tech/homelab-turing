@@ -26,3 +26,4 @@ A concise, lightweight decision log inspired by Architectural Decision Records (
 | D18 | 2026-04-03 | Use Tekton as CI system                                                  | Kubernetes-native, CNCF Incubating. See [D18-ci-system.md](D18-ci-system.md) |
 | D19 | 2026-04-03 | OIDC federation for AWS authentication                                   | Replace static IAM keys with IRSA-style keyless auth. See [D19-oidc-aws-authentication.md](D19-oidc-aws-authentication.md) |
 | D20 | 2026-04-03 | Migrate Harbor to ARM64                                                  | Node5 decommissioned; switch to Bitnami chart for ARM support. See [D20-harbor-on-arm.md](D20-harbor-on-arm.md) |
+| D21 | 2026-04-03 | Implement layered cluster security                                       | VAP + Kyverno + Tetragon + PSS + NetworkPolicies. See [D21-cluster-security.md](D21-cluster-security.md) |
