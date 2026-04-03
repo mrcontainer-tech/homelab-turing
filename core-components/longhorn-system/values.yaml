@@ -1,4 +1,7 @@
 # Use this file to override default values.yaml with custom values.yaml
+csi:
+  kubeletRootDir: /var/lib/kubelet
+
 metrics:
   serviceMonitor:
     enabled: true

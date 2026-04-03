@@ -13,22 +13,27 @@ spec:
             chart: cert-manager
             repoURL: https://charts.jetstack.io
             version: v1.18.0
+            releaseName: cert-manager
           - name: external-dns
             chart: external-dns
             repoURL: https://kubernetes-sigs.github.io/external-dns/
             version: "1.17.0"
+            releaseName: external-dns
           - name: external-secrets
             chart: external-secrets
             repoURL: https://charts.external-secrets.io
             version: 0.18.1
+            releaseName: external-secrets
           - name: metallb-system
             chart: metallb
             repoURL: https://metallb.github.io/metallb
             version: 0.15.2
+            releaseName: metallb
           - name: longhorn-system
             chart: longhorn
             repoURL: https://charts.longhorn.io
             version: 1.8.2
+            releaseName: longhorn
   template:
     metadata:
       # e.g. name="cert-manager-chart"
@@ -40,7 +45,7 @@ spec:
           chart: '{{ .chart }}'
           targetRevision: '{{ .version }}'
           helm:
-            releaseName: '{{ .chart }}'
+            releaseName: '{{ .releaseName }}'
             valueFiles:
               - $values/core-components/{{ .name }}/values.yaml
         - repoURL: https://github.com/mrcontainer-tech/homelab-turing.git

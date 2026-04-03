@@ -13,18 +13,22 @@ spec:
             chart: harbor
             repoURL: https://helm.goharbor.io
             version: 1.18.1
+            releaseName: harbor-chart
           - name: kube-prometheus-stack
             chart: kube-prometheus-stack
             repoURL: https://prometheus-community.github.io/helm-charts
             version: 75.7.0
+            releaseName: kube-prometheus-stack
           - name: kyverno
             chart: kyverno
             repoURL: https://kyverno.github.io/kyverno/
             version: 3.6.2
+            releaseName: kyverno-chart
           - name: policy-reporter
             chart: policy-reporter
             repoURL: https://kyverno.github.io/policy-reporter
             version: 3.7.1
+            releaseName: policy-reporter-chart
   template:
     metadata:
       # e.g. name="harbor-chart"
@@ -36,7 +40,7 @@ spec:
           chart: '{{ .chart }}'
           targetRevision: '{{ .version }}'
           helm:
-            releaseName: '{{ .chart }}'
+            releaseName: '{{ .releaseName }}'
             valueFiles:
               - $values/applications/{{ .name }}/values.yaml
         - repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
