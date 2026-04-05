@@ -1,0 +1,21 @@
+# oauth: left unset — operator reads from pre-created Secret "operator-oauth"
+# (synced from AWS Secrets Manager via ExternalSecret)
+
+operatorConfig:
+  hostname: "tailscale-operator"
+  defaultTags:
+    - "tag:k8s-operator"
+
+apiServerProxyConfig:
+  mode: "noauth"
+
+proxyConfig:
+  defaultTags: "tag:k8s"
+  firewallMode: auto
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
