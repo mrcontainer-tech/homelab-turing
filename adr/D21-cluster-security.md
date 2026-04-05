@@ -279,7 +279,7 @@ These policies will generate PolicyReports for Policy Reporter.
 
 ### Phase 4: Tetragon Deployment
 
-1. Add to `applications-chart-application-set.yaml`:
+1. Add to `appsets/applications-chart-application-set.yaml`:
    - Chart: `tetragon`, Repo: `https://helm.cilium.io`, Version: latest stable
 2. Create `applications/tetragon/values.yaml` with ARM64 resource limits
 3. Create `applications/tetragon/manifests/namespace.yaml`

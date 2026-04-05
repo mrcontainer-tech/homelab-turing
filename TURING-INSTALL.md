@@ -189,16 +189,13 @@ helm repo update
 helm install argocd argo/argo-cd --namespace argocd --create-namespace
 ```
 
-After installation, connect ArgoCD to this Git repository through the ArgoCD UI or CLI. Then apply the ApplicationSets to start syncing everything:
+After installation, connect ArgoCD to this Git repository through the ArgoCD UI or CLI. Then apply the bootstrap Application to start syncing everything:
 
 ```bash
-kubectl apply -f core-components-chart-application-set.yaml
-kubectl apply -f core-components-manifest-application-set.yaml
-kubectl apply -f applications-chart-application-set.yaml
-kubectl apply -f applications-manifest-application-set.yaml
+kubectl apply -f appsets/bootstrap.yaml
 ```
 
-ArgoCD will discover and deploy all components from this repository.
+This creates the app-of-apps that manages all ApplicationSets. ArgoCD will discover and deploy all components from this repository.
 
 ## Useful talosctl Commands
 

@@ -34,10 +34,12 @@ homelab-turing/
 │   ├── homepage/              # Homelab landing page
 │   └── tokito/
 │
-├── core-components-chart-application-set.yaml    # List generator: remote Helm charts
-├── core-components-manifest-application-set.yaml  # Git generator: raw YAML manifests
-├── applications-chart-application-set.yaml        # List generator: remote Helm charts
-└── applications-manifest-application-set.yaml     # Git generator: raw YAML manifests
+├── appsets/                    # ArgoCD ApplicationSets (app of apps)
+│   ├── bootstrap.yaml                                 # Root Application — watches this directory
+│   ├── core-components-chart-application-set.yaml     # List generator: remote Helm charts
+│   ├── core-components-manifest-application-set.yaml  # Git generator: raw YAML manifests
+│   ├── applications-chart-application-set.yaml        # List generator: remote Helm charts
+│   └── applications-manifest-application-set.yaml     # Git generator: raw YAML manifests
 ```
 
 ---
@@ -82,7 +84,7 @@ component-name/
    ```
 
 2. **For Helm charts** — add entry to the appropriate ApplicationSet:
-   - Add element to the list generator in `core-components-chart-application-set.yaml`
+   - Add element to the list generator in `appsets/core-components-chart-application-set.yaml`
    - Include: name, chart, repoURL, version
    - Create `core-components/<component-name>/values.yaml` with custom overrides
 
@@ -100,11 +102,11 @@ component-name/
 
 ### Adding a New Application
 
-Same process as core components, but use `applications/` directory and `applications-chart-application-set.yaml`.
+Same process as core components, but use `applications/` directory and `appsets/applications-chart-application-set.yaml`.
 
 ### Updating a Helm Chart Version
 
-1. **Update the version** in the relevant ApplicationSet file (`*-chart-application-set.yaml`)
+1. **Update the version** in the relevant ApplicationSet file (`appsets/*-chart-application-set.yaml`)
 2. **Adjust values.yaml** if the new chart version requires changes
 3. **User reviews and commits** changes to Git
 4. **After push, ArgoCD auto-syncs** (prune + self-heal enabled)

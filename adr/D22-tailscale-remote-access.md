@@ -203,7 +203,7 @@ This allows tagging Tailscale Ingress resources with purpose-specific tags (e.g.
 ### Phase 1: Tailscale Operator Deployment
 
 1. Create `core-components/tailscale/` directory with values.yaml, manifests, and README
-2. Add Helm chart entry to `core-components-chart-application-set.yaml`
+2. Add Helm chart entry to `appsets/core-components-chart-application-set.yaml`
 3. Store Tailscale OAuth client credentials in AWS Secrets Manager
 4. Create ExternalSecret to sync credentials into the tailscale namespace
 5. Configure Tailscale ACL policy in admin console with tags and auto-approvers

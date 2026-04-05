@@ -84,8 +84,8 @@ homelab-turing/
 │   ├── linkding/
 │   ├── mealie/
 │   └── miniflux/
-├── adr/                       # Architecture Decision Records
-└── *-application-set.yaml     # ArgoCD ApplicationSets
+├── appsets/                    # ArgoCD ApplicationSets (app of apps)
+└── adr/                       # Architecture Decision Records
 ```
 
 Each component follows the same pattern:
@@ -163,20 +163,17 @@ No secrets in Git. All credentials live in AWS Secrets Manager and get synced in
 
 ## Bootstrapping
 
-ArgoCD is the one thing that needs manual installation. After that, it manages itself and everything else.
+ArgoCD is the one thing that needs manual installation. After that, a single bootstrap Application manages the ApplicationSets, which manage everything else.
 
 ```bash
 helm repo add argo https://argoproj.github.io/argo-helm
 helm install argocd argo/argo-cd --namespace argocd --create-namespace
 
-# Then apply the four ApplicationSets
-kubectl apply -f core-components-chart-application-set.yaml
-kubectl apply -f core-components-manifest-application-set.yaml
-kubectl apply -f applications-chart-application-set.yaml
-kubectl apply -f applications-manifest-application-set.yaml
+# Bootstrap: apply the app-of-apps, which manages all ApplicationSets
+kubectl apply -f appsets/bootstrap.yaml
 ```
 
-From here, ArgoCD discovers everything in the repo and deploys it.
+From here, ArgoCD discovers the ApplicationSets in `appsets/`, generates Applications for every component, and deploys them. Fully self-managing.
 
 ## Quick Commands
 
