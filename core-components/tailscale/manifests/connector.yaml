@@ -3,7 +3,7 @@ kind: Connector
 metadata:
   name: homelab-subnet
 spec:
-  hostnamePrefix: homelab-subnet
+  hostname: homelab-subnet
   tags:
     - "tag:k8s-subnet"
   subnetRouter:
