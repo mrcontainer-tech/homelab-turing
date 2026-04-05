@@ -1,7 +1,7 @@
 # D17: CloudNativePG Operator for PostgreSQL
 
 **Date**: 2026-04-03
-**Status**: Proposed
+**Status**: Accepted
 **Decision**: Adopt CloudNativePG as the PostgreSQL operator
 **Context**: Need a managed PostgreSQL solution for Harbor and future applications
 

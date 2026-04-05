@@ -39,6 +39,11 @@ spec:
             repoURL: https://pkgs.tailscale.com/helmcharts
             version: "1.82.0"
             releaseName: tailscale-operator
+          - name: cloudnativepg
+            chart: cloudnative-pg
+            repoURL: https://cloudnative-pg.github.io/charts
+            version: "0.28.0"
+            releaseName: cloudnative-pg
   template:
     metadata:
       # e.g. name="cert-manager-chart"

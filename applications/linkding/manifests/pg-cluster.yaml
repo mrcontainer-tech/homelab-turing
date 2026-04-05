@@ -1,0 +1,20 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: pg-cluster
+  namespace: linkding
+spec:
+  instances: 1
+  storage:
+    storageClass: longhorn
+    size: 2Gi
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+    limits:
+      memory: 256Mi
+  postgresql:
+    parameters:
+      shared_buffers: "64MB"
+      effective_cache_size: "128MB"

@@ -38,6 +38,11 @@ data:
         columns: 2
         tab: Core
         icon: mdi-shield-lock
+      CI/CD:
+        style: row
+        columns: 2
+        tab: Core
+        icon: mdi-pipe
       Observability:
         style: row
         columns: 2
@@ -48,6 +53,11 @@ data:
         columns: 4
         tab: Media
         icon: mdi-television
+      Apps:
+        style: row
+        columns: 3
+        tab: Apps
+        icon: mdi-apps
     providers:
       longhorn:
         url: http://longhorn-frontend.longhorn-system.svc.cluster.local
@@ -63,6 +73,19 @@ data:
             - abbr: Notes
               href: https://github.com/scholtenmartijn/zk-vault
               icon: https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png
+    - Admin:
+        - Tailscale:
+            - abbr: TS
+              href: https://login.tailscale.com/admin
+              icon: mdi-vpn
+        - AWS Console:
+            - abbr: AWS
+              href: https://eu-west-1.console.aws.amazon.com/
+              icon: mdi-aws
+        - ArgoCD Docs:
+            - abbr: Argo
+              href: https://argo-cd.readthedocs.io/en/stable/
+              icon: https://argocd.mrcontainer.nl/assets/favicon/favicon-32x32.png
     - Bookmarks:
         - Github:
             - abbr: GH
@@ -99,6 +122,12 @@ data:
             description: Policy engine
             icon: mdi-shield-check
             siteMonitor: https://policy-reporter.mrcontainer.nl/
+    - CI/CD:
+        - Tekton Dashboard:
+            href: https://tekton.mrcontainer.nl/
+            description: CI/CD pipelines
+            icon: mdi-pipe
+            siteMonitor: https://tekton.mrcontainer.nl/
     - Observability:
         - Grafana:
             href: https://grafana.mrcontainer.nl/
@@ -156,6 +185,15 @@ data:
               type: radarr
               url: http://radarr.media.svc.cluster.local:7878
               key: {{HOMEPAGE_VAR_RADARR_API_KEY}}
+        - Bazarr:
+            href: https://bazarr.mrcontainer.nl/
+            description: Subtitle manager
+            icon: mdi-subtitles
+            siteMonitor: https://bazarr.mrcontainer.nl/
+            widget:
+              type: bazarr
+              url: http://bazarr.media.svc.cluster.local:6767
+              key: {{HOMEPAGE_VAR_BAZARR_API_KEY}}
         - qBittorrent:
             href: https://qb.mrcontainer.nl/
             description: Torrent client
@@ -166,6 +204,26 @@ data:
               url: http://qbittorrent.media.svc.cluster.local:8080
               username: {{HOMEPAGE_VAR_QBITTORRENT_USERNAME}}
               password: {{HOMEPAGE_VAR_QBITTORRENT_PASSWORD}}
+    - Apps:
+        - Miniflux:
+            href: https://miniflux.mrcontainer.nl/
+            description: RSS reader
+            icon: mdi-rss
+            siteMonitor: https://miniflux.mrcontainer.nl/
+            widget:
+              type: miniflux
+              url: http://miniflux.miniflux.svc.cluster.local:8080
+              key: {{HOMEPAGE_VAR_MINIFLUX_API_KEY}}
+        - Linkding:
+            href: https://linkding.mrcontainer.nl/
+            description: Bookmark manager
+            icon: mdi-bookmark-multiple
+            siteMonitor: https://linkding.mrcontainer.nl/
+        - Mealie:
+            href: https://mealie.mrcontainer.nl/
+            description: Recipe manager
+            icon: mdi-food
+            siteMonitor: https://mealie.mrcontainer.nl/
   widgets.yaml: |
     - greeting:
         text_size: l

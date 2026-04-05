@@ -65,6 +65,16 @@ spec:
                 secretKeyRef:
                   name: homepage-api-keys
                   key: QBITTORRENT_PASSWORD
+            - name: HOMEPAGE_VAR_BAZARR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: homepage-api-keys
+                  key: BAZARR_API_KEY
+            - name: HOMEPAGE_VAR_MINIFLUX_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: homepage-api-keys
+                  key: MINIFLUX_API_KEY
           ports:
             - name: http
               containerPort: 3000
