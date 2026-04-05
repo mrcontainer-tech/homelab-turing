@@ -1,0 +1,22 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  # "all" profile installs: Pipelines, Triggers, Chains, Dashboard
+  profile: all
+  targetNamespace: tekton-pipelines
+  pipeline:
+    enable-api-fields: beta
+    # Kaniko for rootless image builds (no Docker-in-Docker)
+    set-security-context: "true"
+  pruner:
+    # Auto-cleanup of completed TaskRuns and PipelineRuns
+    schedule: "0 2 * * *"
+    resources:
+      - taskrun
+      - pipelinerun
+    keep: 5
+    keep-since: 1440  # 24 hours in minutes
+  dashboard:
+    readonly: false
