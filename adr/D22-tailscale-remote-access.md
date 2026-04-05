@@ -1,7 +1,7 @@
 # D22: Tailscale Remote Access for Homelab Services
 
 **Date**: 2026-04-04
-**Status**: Proposed
+**Status**: Accepted
 **Decision**: Deploy the Tailscale Kubernetes operator with a hybrid approach — subnet router for full network access plus Tailscale Ingress for priority services
 **Context**: Homelab services are only accessible on the local network — need secure remote access from personal devices anywhere
 
