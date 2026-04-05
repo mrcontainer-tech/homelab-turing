@@ -38,6 +38,7 @@ spec:
           kind: CustomResourceDefinition
           jqPathExpressions:
             - .spec.conversion
+            - .spec.preserveUnknownFields
       syncPolicy:
         automated:
           prune: true
