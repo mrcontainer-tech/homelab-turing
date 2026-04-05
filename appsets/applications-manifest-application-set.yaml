@@ -26,6 +26,14 @@ spec:
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{ base (dir .path.path) }}'
+      ignoreDifferences:
+        - group: external-secrets.io
+          kind: ExternalSecret
+          jqPathExpressions:
+            - .spec.data[].remoteRef.conversionStrategy
+            - .spec.data[].remoteRef.decodingStrategy
+            - .spec.data[].remoteRef.metadataPolicy
+            - .spec.dataFrom
       syncPolicy:
         automated:
           prune: true
@@ -33,3 +41,4 @@ spec:
         syncOptions:
           - CreateNamespace=false
           - ServerSideApply=true
+          - RespectIgnoreDifferences=true
