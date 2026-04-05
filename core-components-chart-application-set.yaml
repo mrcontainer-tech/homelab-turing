@@ -34,6 +34,11 @@ spec:
             repoURL: https://charts.longhorn.io
             version: 1.8.2
             releaseName: longhorn
+          - name: tailscale
+            chart: tailscale-operator
+            repoURL: https://pkgs.tailscale.com/helmcharts
+            version: "1.82.0"
+            releaseName: tailscale-operator
   template:
     metadata:
       # e.g. name="cert-manager-chart"
