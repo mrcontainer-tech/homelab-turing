@@ -10,9 +10,10 @@ metadata:
       Automatically rewrites container image references to pull through the Zot
       registry (zot.mrcontainer.nl) for caching and Trivy vulnerability scanning.
       Images are routed to the correct upstream prefix based on their source registry.
+      System namespaces are excluded to avoid breaking core infrastructure.
 spec:
   rules:
-    # Docker Hub (docker.io) - images like nginx:latest or library/nginx:latest
+    # Docker Hub implicit (no domain prefix, e.g. nginx:latest)
     - name: rewrite-dockerhub-implicit
       match:
         any:
@@ -26,6 +27,21 @@ spec:
                 - kube-system
                 - kube-public
                 - kube-node-lease
+                - argocd
+                - cert-manager
+                - cloudnativepg
+                - coredns
+                - dnscrypt-proxy
+                - external-dns
+                - external-secrets
+                - kube-prometheus-stack
+                - kyverno
+                - longhorn-system
+                - metallb-system
+                - policy-reporter
+                - tailscale
+                - tekton-operator
+                - tekton-pipelines
                 - zot
       preconditions:
         all:
@@ -62,7 +78,7 @@ spec:
                 initContainers:
                   - (name): "{{element.name}}"
                     image: "zot.mrcontainer.nl/dockerhub/library/{{element.image}}"
-    # Docker Hub with explicit docker.io prefix
+    # Docker Hub explicit (docker.io/...)
     - name: rewrite-dockerhub-explicit
       match:
         any:
@@ -76,6 +92,21 @@ spec:
                 - kube-system
                 - kube-public
                 - kube-node-lease
+                - argocd
+                - cert-manager
+                - cloudnativepg
+                - coredns
+                - dnscrypt-proxy
+                - external-dns
+                - external-secrets
+                - kube-prometheus-stack
+                - kyverno
+                - longhorn-system
+                - metallb-system
+                - policy-reporter
+                - tailscale
+                - tekton-operator
+                - tekton-pipelines
                 - zot
       preconditions:
         all:
@@ -120,6 +151,21 @@ spec:
                 - kube-system
                 - kube-public
                 - kube-node-lease
+                - argocd
+                - cert-manager
+                - cloudnativepg
+                - coredns
+                - dnscrypt-proxy
+                - external-dns
+                - external-secrets
+                - kube-prometheus-stack
+                - kyverno
+                - longhorn-system
+                - metallb-system
+                - policy-reporter
+                - tailscale
+                - tekton-operator
+                - tekton-pipelines
                 - zot
       preconditions:
         all:
@@ -164,6 +210,21 @@ spec:
                 - kube-system
                 - kube-public
                 - kube-node-lease
+                - argocd
+                - cert-manager
+                - cloudnativepg
+                - coredns
+                - dnscrypt-proxy
+                - external-dns
+                - external-secrets
+                - kube-prometheus-stack
+                - kyverno
+                - longhorn-system
+                - metallb-system
+                - policy-reporter
+                - tailscale
+                - tekton-operator
+                - tekton-pipelines
                 - zot
       preconditions:
         all:
@@ -208,6 +269,21 @@ spec:
                 - kube-system
                 - kube-public
                 - kube-node-lease
+                - argocd
+                - cert-manager
+                - cloudnativepg
+                - coredns
+                - dnscrypt-proxy
+                - external-dns
+                - external-secrets
+                - kube-prometheus-stack
+                - kyverno
+                - longhorn-system
+                - metallb-system
+                - policy-reporter
+                - tailscale
+                - tekton-operator
+                - tekton-pipelines
                 - zot
       preconditions:
         all:
@@ -252,6 +328,21 @@ spec:
                 - kube-system
                 - kube-public
                 - kube-node-lease
+                - argocd
+                - cert-manager
+                - cloudnativepg
+                - coredns
+                - dnscrypt-proxy
+                - external-dns
+                - external-secrets
+                - kube-prometheus-stack
+                - kyverno
+                - longhorn-system
+                - metallb-system
+                - policy-reporter
+                - tailscale
+                - tekton-operator
+                - tekton-pipelines
                 - zot
       preconditions:
         all:
@@ -296,6 +387,21 @@ spec:
                 - kube-system
                 - kube-public
                 - kube-node-lease
+                - argocd
+                - cert-manager
+                - cloudnativepg
+                - coredns
+                - dnscrypt-proxy
+                - external-dns
+                - external-secrets
+                - kube-prometheus-stack
+                - kyverno
+                - longhorn-system
+                - metallb-system
+                - policy-reporter
+                - tailscale
+                - tekton-operator
+                - tekton-pipelines
                 - zot
       preconditions:
         all:
@@ -340,6 +446,21 @@ spec:
                 - kube-system
                 - kube-public
                 - kube-node-lease
+                - argocd
+                - cert-manager
+                - cloudnativepg
+                - coredns
+                - dnscrypt-proxy
+                - external-dns
+                - external-secrets
+                - kube-prometheus-stack
+                - kyverno
+                - longhorn-system
+                - metallb-system
+                - policy-reporter
+                - tailscale
+                - tekton-operator
+                - tekton-pipelines
                 - zot
       preconditions:
         all:
