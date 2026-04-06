@@ -1,0 +1,29 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: pytest
+  namespace: tekton-pipelines
+spec:
+  description: Run pytest in a Python project subdirectory
+  params:
+    - name: project-dir
+      type: string
+      description: Path to the Python project within the workspace
+    - name: python-image
+      type: string
+      default: "python:3.12-slim"
+    - name: args
+      type: string
+      default: "-v"
+      description: Arguments passed to pytest
+  workspaces:
+    - name: source
+  steps:
+    - name: run-tests
+      image: "$(params.python-image)"
+      workingDir: "$(workspaces.source.path)/$(params.project-dir)"
+      script: |
+        #!/bin/sh
+        set -e
+        pip install --no-cache-dir .[dev]
+        pytest $(params.args)

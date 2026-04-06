@@ -5,11 +5,13 @@ CI/CD pipeline resources for building container images with Tekton.
 ## Architecture
 
 ```
-GitHub Push → Tekton EventListener → PipelineRun → TaskRuns:
+Git Tag (v*) → GitHub Webhook → Tekton EventListener → PipelineRun:
   ├── git-clone (Hub resolver v0.9)
-  ├── build-backend (Kaniko, parallel)
-  └── build-frontend (Kaniko, parallel)
+  ├── test-backend (pytest, parallel) → build-backend (Kaniko)
+  └── test-frontend (vitest, parallel) → build-frontend (Kaniko)
 ```
+
+Builds are triggered by pushing a semver Git tag (e.g., `v1.0.0`). The tag is used as the container image tag.
 
 Images are pushed to the internal Zot registry at `zot-chart.zot.svc:5000`.
 
@@ -23,7 +25,9 @@ Images are pushed to the internal Zot registry at `zot-chart.zot.svc:5000`.
 | `02-dashboard-cert.yaml` | TLS certificate for `tekton.mrcontainer.nl` |
 | `03-dashboard-ingress.yaml` | Traefik ingress for Tekton Dashboard |
 | `04-dashboard-ingress-tailscale.yaml` | Tailscale ingress for remote access |
-| `10-pipeline.yaml` | FlowFin CI Pipeline (clone + build backend/frontend) |
+| `05-task-pytest.yaml` | Custom Task: run pytest in a Python project |
+| `06-task-npm-test.yaml` | Custom Task: run npm tests in a Node.js project |
+| `10-pipeline.yaml` | FlowFin CI Pipeline (clone + test + build) |
 | `11-trigger-template.yaml` | TriggerTemplate for webhook-driven builds |
 | `12-trigger-binding.yaml` | Extracts params from GitHub push payload |
 | `13-event-listener.yaml` | Listens for GitHub push events on `main` |
@@ -87,14 +91,27 @@ Monitor progress:
 kubectl get pipelinerun -n tekton-pipelines -w
 ```
 
+## Triggering a Build
+
+Tag a release in the FlowFin repo:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+This triggers the pipeline, which builds and pushes:
+- `zot-chart.zot.svc:5000/flowfin/backend:v1.0.0`
+- `zot-chart.zot.svc:5000/flowfin/frontend:v1.0.0`
+
 ## GitHub Webhook Setup
 
-To enable automatic builds on push to `main`:
+To enable automatic builds on tag push:
 
 1. Go to **GitHub repo > Settings > Webhooks > Add webhook**
-3. Set Payload URL to `https://tekton-webhook.mrcontainer.nl`
-4. Set Content type to `application/json`
-5. Select "Just the push event"
+2. Set Payload URL to `https://tekton-webhook.mrcontainer.nl`
+3. Set Content type to `application/json`
+4. Select "Just the push event"
 
 ## Prerequisites
 

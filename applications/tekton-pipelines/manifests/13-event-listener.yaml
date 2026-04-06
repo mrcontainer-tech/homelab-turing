@@ -6,9 +6,9 @@ metadata:
 spec:
   serviceAccountName: tekton-ci
   triggers:
-    - name: github-push
+    - name: github-tag-push
       bindings:
-        - ref: github-push
+        - ref: github-tag-push
       template:
         ref: flowfin-build-trigger
       interceptors:
@@ -21,4 +21,8 @@ spec:
             name: "cel"
           params:
             - name: "filter"
-              value: "body.ref == 'refs/heads/main'"
+              value: "body.ref.startsWith('refs/tags/v')"
+            - name: "overlays"
+              value:
+                - key: tag
+                  expression: "body.ref.split('/')[2]"

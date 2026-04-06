@@ -1,0 +1,25 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: npm-test
+  namespace: tekton-pipelines
+spec:
+  description: Run npm tests in a Node.js project subdirectory
+  params:
+    - name: project-dir
+      type: string
+      description: Path to the Node.js project within the workspace
+    - name: node-image
+      type: string
+      default: "node:22-slim"
+  workspaces:
+    - name: source
+  steps:
+    - name: run-tests
+      image: "$(params.node-image)"
+      workingDir: "$(workspaces.source.path)/$(params.project-dir)"
+      script: |
+        #!/bin/sh
+        set -e
+        npm ci
+        npm test

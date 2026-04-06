@@ -40,8 +40,32 @@ spec:
         - name: output
           workspace: shared-workspace
 
-    - name: build-backend
+    - name: test-backend
       runAfter: ["clone"]
+      taskRef:
+        name: pytest
+      params:
+        - name: project-dir
+          value: "backend"
+        - name: args
+          value: "-v"
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+
+    - name: test-frontend
+      runAfter: ["clone"]
+      taskRef:
+        name: npm-test
+      params:
+        - name: project-dir
+          value: "frontend"
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+
+    - name: build-backend
+      runAfter: ["test-backend"]
       taskRef:
         resolver: hub
         params:
@@ -72,7 +96,7 @@ spec:
           workspace: shared-workspace
 
     - name: build-frontend
-      runAfter: ["clone"]
+      runAfter: ["test-frontend"]
       taskRef:
         resolver: hub
         params:
