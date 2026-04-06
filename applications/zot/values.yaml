@@ -1,0 +1,130 @@
+# Zot OCI Registry for ARM64 homelab
+# Chart: project-zot/zot v0.1.104
+# App: Zot v2.1.15
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/project-zot/zot
+  pullPolicy: IfNotPresent
+  tag: "v2.1.15"
+
+service:
+  type: ClusterIP
+  port: 5000
+
+# Ingress managed separately via manifests/ (cert-manager + Traefik)
+ingress:
+  enabled: false
+
+# Longhorn persistent storage
+persistence: true
+pvc:
+  create: true
+  accessModes:
+    - ReadWriteOnce
+  storage: 10Gi
+  storageClassName: longhorn
+
+# Full Zot configuration via config.json
+mountConfig: true
+configFiles:
+  config.json: |-
+    {
+      "storage": {
+        "rootDirectory": "/var/lib/registry",
+        "gc": true,
+        "gcDelay": "1h",
+        "gcInterval": "24h",
+        "dedupe": true,
+        "commit": true
+      },
+      "http": {
+        "address": "0.0.0.0",
+        "port": "5000"
+      },
+      "log": {
+        "level": "info"
+      },
+      "extensions": {
+        "ui": {
+          "enable": true
+        },
+        "search": {
+          "enable": true,
+          "cve": {
+            "updateInterval": "3h"
+          }
+        },
+        "sync": {
+          "enable": true,
+          "registries": [
+            {
+              "urls": ["https://registry-1.docker.io"],
+              "onDemand": true,
+              "tlsVerify": true,
+              "maxRetries": 3,
+              "retryDelay": "5m",
+              "content": [{ "prefix": "**" }]
+            },
+            {
+              "urls": ["https://ghcr.io"],
+              "onDemand": true,
+              "tlsVerify": true,
+              "maxRetries": 3,
+              "retryDelay": "5m",
+              "content": [{ "prefix": "**" }]
+            },
+            {
+              "urls": ["https://quay.io"],
+              "onDemand": true,
+              "tlsVerify": true,
+              "maxRetries": 3,
+              "retryDelay": "5m",
+              "content": [{ "prefix": "**" }]
+            },
+            {
+              "urls": ["https://lscr.io"],
+              "onDemand": true,
+              "tlsVerify": true,
+              "maxRetries": 3,
+              "retryDelay": "5m",
+              "content": [{ "prefix": "**" }]
+            },
+            {
+              "urls": ["https://registry.k8s.io"],
+              "onDemand": true,
+              "tlsVerify": true,
+              "maxRetries": 3,
+              "retryDelay": "5m",
+              "content": [{ "prefix": "**" }]
+            },
+            {
+              "urls": ["https://gcr.io"],
+              "onDemand": true,
+              "tlsVerify": true,
+              "maxRetries": 3,
+              "retryDelay": "5m",
+              "content": [{ "prefix": "**" }]
+            },
+            {
+              "urls": ["https://nvcr.io"],
+              "onDemand": true,
+              "tlsVerify": true,
+              "maxRetries": 3,
+              "retryDelay": "5m",
+              "content": [{ "prefix": "**" }]
+            }
+          ]
+        }
+      }
+    }
+
+# ARM64-appropriate resource limits
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 1Gi

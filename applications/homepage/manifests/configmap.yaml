@@ -112,11 +112,11 @@ data:
             icon: http://longhorn.mrcontainer.nl/favicon.ico
             siteMonitor: https://longhorn.mrcontainer.nl/
     - Security:
-        - Harbor:
-            href: https://harbor.mrcontainer.nl/
-            description: Container registry
+        - Zot Registry:
+            href: https://zot.mrcontainer.nl/
+            description: OCI container registry
             icon: mdi-docker
-            siteMonitor: https://harbor.mrcontainer.nl/
+            siteMonitor: https://zot.mrcontainer.nl/
         - Kyverno:
             href: https://policy-reporter.mrcontainer.nl/
             description: Policy engine

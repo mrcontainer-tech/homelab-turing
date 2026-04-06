@@ -46,7 +46,7 @@ The stuff I actually use.
 | **Miniflux** | RSS reader for tech news |
 | **Linkding** | Bookmark manager |
 | **Mealie** | Recipe manager with meal planning |
-| **Harbor** | Container registry and pull-through cache |
+| **Zot** | OCI container registry with pull-through cache and Trivy scanning |
 | **Kyverno + Policy Reporter** | Policy engine and compliance reporting |
 | **Prometheus + Grafana** | Monitoring and dashboards |
 
@@ -77,7 +77,7 @@ homelab-turing/
 ├── applications/              # Workloads
 │   ├── homepage/
 │   ├── media-server/
-│   ├── harbor/
+│   ├── zot/
 │   ├── kube-prometheus-stack/
 │   ├── kyverno/
 │   ├── policy-reporter/

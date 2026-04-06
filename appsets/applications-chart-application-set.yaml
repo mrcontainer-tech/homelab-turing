@@ -9,11 +9,11 @@ spec:
   generators:
     - list:
         elements:
-          - name: harbor
-            chart: harbor
-            repoURL: https://helm.goharbor.io
-            version: 1.18.1
-            releaseName: harbor-chart
+          - name: zot
+            chart: zot
+            repoURL: http://zotregistry.dev/helm-charts
+            version: 0.1.104
+            releaseName: zot-chart
           - name: kube-prometheus-stack
             chart: kube-prometheus-stack
             repoURL: https://prometheus-community.github.io/helm-charts
