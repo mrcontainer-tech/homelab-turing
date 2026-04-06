@@ -29,6 +29,7 @@ spec:
                 - tailscale
                 - tekton-pipelines
                 - tekton-operator
+                - zot
       mutate:
         foreach:
           - list: "request.object.spec.containers[]"
