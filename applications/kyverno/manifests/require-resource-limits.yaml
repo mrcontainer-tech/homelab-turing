@@ -10,8 +10,10 @@ metadata:
       All containers should define memory limits to prevent unbounded resource
       usage on resource-constrained Raspberry Pi CM4 nodes.
 spec:
-  validationFailureAction: Audit
+  admission: true
   background: true
+  emitWarning: false
+  validationFailureAction: Audit
   rules:
     - name: validate-memory-limits
       match:

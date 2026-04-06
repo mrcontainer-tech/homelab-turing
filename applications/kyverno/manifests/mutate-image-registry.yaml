@@ -12,6 +12,10 @@ metadata:
       Images are routed to the correct upstream prefix based on their source registry.
       System namespaces are excluded to avoid breaking core infrastructure.
 spec:
+  admission: true
+  background: true
+  emitWarning: false
+  validationFailureAction: Audit
   rules:
     # Docker Hub implicit - official library images (no domain, no slash, e.g. nginx:latest)
     - name: rewrite-dockerhub-library

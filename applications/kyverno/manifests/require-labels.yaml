@@ -10,8 +10,10 @@ metadata:
       All Pods should have the app.kubernetes.io/name label for consistent
       identification and service discovery.
 spec:
-  validationFailureAction: Audit
+  admission: true
   background: true
+  emitWarning: false
+  validationFailureAction: Audit
   rules:
     - name: validate-app-label
       match:

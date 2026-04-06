@@ -11,8 +11,10 @@ metadata:
       Zot registry (zot.mrcontainer.nl) to ensure they are scanned for
       vulnerabilities by Trivy. Implements D10 (enforce registry usage).
 spec:
-  validationFailureAction: Audit
+  admission: true
   background: true
+  emitWarning: false
+  validationFailureAction: Audit
   rules:
     - name: validate-image-registry
       match:
