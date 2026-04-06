@@ -13,8 +13,8 @@ metadata:
       System namespaces are excluded to avoid breaking core infrastructure.
 spec:
   rules:
-    # Docker Hub implicit (no domain prefix, e.g. nginx:latest)
-    - name: rewrite-dockerhub-implicit
+    # Docker Hub implicit - official library images (no domain, no slash, e.g. nginx:latest)
+    - name: rewrite-dockerhub-library
       match:
         any:
           - resources:
@@ -59,6 +59,9 @@ spec:
                 - key: "{{element.image}}"
                   operator: NotEquals
                   value: "*.*/*"
+                - key: "{{element.image}}"
+                  operator: NotEquals
+                  value: "*/*"
             patchStrategicMerge:
               spec:
                 containers:
@@ -73,11 +76,85 @@ spec:
                 - key: "{{element.image}}"
                   operator: NotEquals
                   value: "*.*/*"
+                - key: "{{element.image}}"
+                  operator: NotEquals
+                  value: "*/*"
             patchStrategicMerge:
               spec:
                 initContainers:
                   - (name): "{{element.name}}"
                     image: "zot.mrcontainer.nl/dockerhub/library/{{element.image}}"
+    # Docker Hub implicit - namespaced images (no domain, has slash, e.g. miniflux/miniflux:2.2.6)
+    - name: rewrite-dockerhub-namespaced
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+                - argocd
+                - cert-manager
+                - cloudnativepg
+                - coredns
+                - dnscrypt-proxy
+                - external-dns
+                - external-secrets
+                - kube-prometheus-stack
+                - kyverno
+                - longhorn-system
+                - metallb-system
+                - policy-reporter
+                - tailscale
+                - tekton-operator
+                - tekton-pipelines
+                - zot
+      preconditions:
+        all:
+          - key: "{{request.operation}}"
+            operator: In
+            value: ["CREATE", "UPDATE"]
+      mutate:
+        foreach:
+          - list: "request.object.spec.containers[]"
+            preconditions:
+              all:
+                - key: "{{element.image}}"
+                  operator: NotEquals
+                  value: "zot.mrcontainer.nl/*"
+                - key: "{{element.image}}"
+                  operator: NotEquals
+                  value: "*.*/*"
+                - key: "{{element.image}}"
+                  operator: Equals
+                  value: "*/*"
+            patchStrategicMerge:
+              spec:
+                containers:
+                  - (name): "{{element.name}}"
+                    image: "zot.mrcontainer.nl/dockerhub/{{element.image}}"
+          - list: "request.object.spec.initContainers[] || []"
+            preconditions:
+              all:
+                - key: "{{element.image}}"
+                  operator: NotEquals
+                  value: "zot.mrcontainer.nl/*"
+                - key: "{{element.image}}"
+                  operator: NotEquals
+                  value: "*.*/*"
+                - key: "{{element.image}}"
+                  operator: Equals
+                  value: "*/*"
+            patchStrategicMerge:
+              spec:
+                initContainers:
+                  - (name): "{{element.name}}"
+                    image: "zot.mrcontainer.nl/dockerhub/{{element.image}}"
     # Docker Hub explicit (docker.io/...)
     - name: rewrite-dockerhub-explicit
       match:
