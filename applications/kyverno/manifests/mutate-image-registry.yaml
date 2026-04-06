@@ -16,8 +16,6 @@ spec:
   background: true
   emitWarning: false
   validationFailureAction: Audit
-  skipBackgroundRequests: true
-  allowExistingViolations: true
   rules:
     # Docker Hub implicit - official library images (no domain, no slash, e.g. nginx:latest)
     - name: rewrite-dockerhub-library

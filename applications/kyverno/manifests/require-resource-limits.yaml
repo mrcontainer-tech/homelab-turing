@@ -14,8 +14,6 @@ spec:
   background: true
   emitWarning: false
   validationFailureAction: Audit
-  skipBackgroundRequests: true
-  allowExistingViolations: true
   rules:
     - name: validate-memory-limits
       match:

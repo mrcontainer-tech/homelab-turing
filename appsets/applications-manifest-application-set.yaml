@@ -44,6 +44,11 @@ spec:
           jqPathExpressions:
             - .spec.template.spec.containers[].image
             - .spec.template.spec.initContainers[]?.image
+        - group: kyverno.io
+          kind: ClusterPolicy
+          jqPathExpressions:
+            - .spec.skipBackgroundRequests
+            - .spec.allowExistingViolations
       syncPolicy:
         automated:
           prune: true
