@@ -12,16 +12,15 @@ data:
     title: "Homelab"
     description: "Welcome to my self-hosted deathstar! 🚀"
     background:
-      image: https://images.unsplash.com/photo-1502790671504-542ad42d5189?auto=format&fit=crop&w=2560&q=80
+      image: apod
       blur: sm
-      saturate: 50
-      brightness: 50
       opacity: 50
     favicon: https://www.google.com/favicon.ico
-    theme: dark
     color: slate
+    disableCollapse: true
+    cardBlur: md
     headerStyle: boxed
-    statusStyle: dot
+    statusStyle: basic
     showStats: true
     quicklaunch:
       searchDescriptions: true
