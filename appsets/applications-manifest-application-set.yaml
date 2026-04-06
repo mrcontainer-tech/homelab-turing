@@ -34,6 +34,16 @@ spec:
             - .spec.data[].remoteRef.decodingStrategy
             - .spec.data[].remoteRef.metadataPolicy
             - .spec.dataFrom
+        - group: apps
+          kind: Deployment
+          jqPathExpressions:
+            - .spec.template.spec.containers[].image
+            - .spec.template.spec.initContainers[]?.image
+        - group: apps
+          kind: StatefulSet
+          jqPathExpressions:
+            - .spec.template.spec.containers[].image
+            - .spec.template.spec.initContainers[]?.image
       syncPolicy:
         automated:
           prune: true

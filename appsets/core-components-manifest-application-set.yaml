@@ -39,6 +39,16 @@ spec:
           jqPathExpressions:
             - .spec.conversion
             - .spec.preserveUnknownFields
+        - group: apps
+          kind: Deployment
+          jqPathExpressions:
+            - .spec.template.spec.containers[].image
+            - .spec.template.spec.initContainers[]?.image
+        - group: apps
+          kind: StatefulSet
+          jqPathExpressions:
+            - .spec.template.spec.containers[].image
+            - .spec.template.spec.initContainers[]?.image
       syncPolicy:
         automated:
           prune: true
