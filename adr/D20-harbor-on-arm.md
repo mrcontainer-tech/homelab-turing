@@ -1,7 +1,7 @@
 # D20: Harbor Migration to ARM64
 
 **Date**: 2026-04-03
-**Status**: Accepted
+**Status**: Superseded (by D24 - Zot Registry)
 **Decision**: Option 1 - Migrate Harbor to ARM64 using Bitnami Helm chart
 **Context**: Node5 (AMD64) has been decommissioned; Harbor was exclusively scheduled on node5
 
