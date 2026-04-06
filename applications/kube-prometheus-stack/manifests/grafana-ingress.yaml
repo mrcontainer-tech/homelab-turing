@@ -16,7 +16,7 @@ spec:
             path: /
             backend:
               service:
-                name: kube-prometheus-stack-chart-grafana
+                name: kube-prometheus-stack-grafana
                 port:
                   number: 80
 
