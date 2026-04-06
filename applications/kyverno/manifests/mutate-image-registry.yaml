@@ -1,0 +1,372 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: mutate-image-registry
+  annotations:
+    policies.kyverno.io/title: Rewrite Images to Zot Registry
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      Automatically rewrites container image references to pull through the Zot
+      registry (zot.mrcontainer.nl) for caching and Trivy vulnerability scanning.
+      Images are routed to the correct upstream prefix based on their source registry.
+spec:
+  rules:
+    # Docker Hub (docker.io) - images like nginx:latest or library/nginx:latest
+    - name: rewrite-dockerhub-implicit
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+                - zot
+      preconditions:
+        all:
+          - key: "{{request.operation}}"
+            operator: In
+            value: ["CREATE", "UPDATE"]
+      mutate:
+        foreach:
+          - list: "request.object.spec.containers[]"
+            preconditions:
+              all:
+                - key: "{{element.image}}"
+                  operator: NotEquals
+                  value: "zot.mrcontainer.nl/*"
+                - key: "{{element.image}}"
+                  operator: NotEquals
+                  value: "*.*/*"
+            patchStrategicMerge:
+              spec:
+                containers:
+                  - (name): "{{element.name}}"
+                    image: "zot.mrcontainer.nl/dockerhub/library/{{element.image}}"
+          - list: "request.object.spec.initContainers[] || []"
+            preconditions:
+              all:
+                - key: "{{element.image}}"
+                  operator: NotEquals
+                  value: "zot.mrcontainer.nl/*"
+                - key: "{{element.image}}"
+                  operator: NotEquals
+                  value: "*.*/*"
+            patchStrategicMerge:
+              spec:
+                initContainers:
+                  - (name): "{{element.name}}"
+                    image: "zot.mrcontainer.nl/dockerhub/library/{{element.image}}"
+    # Docker Hub with explicit docker.io prefix
+    - name: rewrite-dockerhub-explicit
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+                - zot
+      preconditions:
+        all:
+          - key: "{{request.operation}}"
+            operator: In
+            value: ["CREATE", "UPDATE"]
+      mutate:
+        foreach:
+          - list: "request.object.spec.containers[]"
+            preconditions:
+              all:
+                - key: "{{element.image}}"
+                  operator: Equals
+                  value: "docker.io/*"
+            patchStrategicMerge:
+              spec:
+                containers:
+                  - (name): "{{element.name}}"
+                    image: "{{ regex_replace_all('^docker\\.io/', element.image, 'zot.mrcontainer.nl/dockerhub/') }}"
+          - list: "request.object.spec.initContainers[] || []"
+            preconditions:
+              all:
+                - key: "{{element.image}}"
+                  operator: Equals
+                  value: "docker.io/*"
+            patchStrategicMerge:
+              spec:
+                initContainers:
+                  - (name): "{{element.name}}"
+                    image: "{{ regex_replace_all('^docker\\.io/', element.image, 'zot.mrcontainer.nl/dockerhub/') }}"
+    # GHCR (ghcr.io)
+    - name: rewrite-ghcr
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+                - zot
+      preconditions:
+        all:
+          - key: "{{request.operation}}"
+            operator: In
+            value: ["CREATE", "UPDATE"]
+      mutate:
+        foreach:
+          - list: "request.object.spec.containers[]"
+            preconditions:
+              all:
+                - key: "{{element.image}}"
+                  operator: Equals
+                  value: "ghcr.io/*"
+            patchStrategicMerge:
+              spec:
+                containers:
+                  - (name): "{{element.name}}"
+                    image: "{{ regex_replace_all('^ghcr\\.io/', element.image, 'zot.mrcontainer.nl/ghcr/') }}"
+          - list: "request.object.spec.initContainers[] || []"
+            preconditions:
+              all:
+                - key: "{{element.image}}"
+                  operator: Equals
+                  value: "ghcr.io/*"
+            patchStrategicMerge:
+              spec:
+                initContainers:
+                  - (name): "{{element.name}}"
+                    image: "{{ regex_replace_all('^ghcr\\.io/', element.image, 'zot.mrcontainer.nl/ghcr/') }}"
+    # Quay (quay.io)
+    - name: rewrite-quay
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+                - zot
+      preconditions:
+        all:
+          - key: "{{request.operation}}"
+            operator: In
+            value: ["CREATE", "UPDATE"]
+      mutate:
+        foreach:
+          - list: "request.object.spec.containers[]"
+            preconditions:
+              all:
+                - key: "{{element.image}}"
+                  operator: Equals
+                  value: "quay.io/*"
+            patchStrategicMerge:
+              spec:
+                containers:
+                  - (name): "{{element.name}}"
+                    image: "{{ regex_replace_all('^quay\\.io/', element.image, 'zot.mrcontainer.nl/quay/') }}"
+          - list: "request.object.spec.initContainers[] || []"
+            preconditions:
+              all:
+                - key: "{{element.image}}"
+                  operator: Equals
+                  value: "quay.io/*"
+            patchStrategicMerge:
+              spec:
+                initContainers:
+                  - (name): "{{element.name}}"
+                    image: "{{ regex_replace_all('^quay\\.io/', element.image, 'zot.mrcontainer.nl/quay/') }}"
+    # LSCR (lscr.io)
+    - name: rewrite-lscr
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+                - zot
+      preconditions:
+        all:
+          - key: "{{request.operation}}"
+            operator: In
+            value: ["CREATE", "UPDATE"]
+      mutate:
+        foreach:
+          - list: "request.object.spec.containers[]"
+            preconditions:
+              all:
+                - key: "{{element.image}}"
+                  operator: Equals
+                  value: "lscr.io/*"
+            patchStrategicMerge:
+              spec:
+                containers:
+                  - (name): "{{element.name}}"
+                    image: "{{ regex_replace_all('^lscr\\.io/', element.image, 'zot.mrcontainer.nl/lscr/') }}"
+          - list: "request.object.spec.initContainers[] || []"
+            preconditions:
+              all:
+                - key: "{{element.image}}"
+                  operator: Equals
+                  value: "lscr.io/*"
+            patchStrategicMerge:
+              spec:
+                initContainers:
+                  - (name): "{{element.name}}"
+                    image: "{{ regex_replace_all('^lscr\\.io/', element.image, 'zot.mrcontainer.nl/lscr/') }}"
+    # Kubernetes registry (registry.k8s.io)
+    - name: rewrite-k8s
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+                - zot
+      preconditions:
+        all:
+          - key: "{{request.operation}}"
+            operator: In
+            value: ["CREATE", "UPDATE"]
+      mutate:
+        foreach:
+          - list: "request.object.spec.containers[]"
+            preconditions:
+              all:
+                - key: "{{element.image}}"
+                  operator: Equals
+                  value: "registry.k8s.io/*"
+            patchStrategicMerge:
+              spec:
+                containers:
+                  - (name): "{{element.name}}"
+                    image: "{{ regex_replace_all('^registry\\.k8s\\.io/', element.image, 'zot.mrcontainer.nl/k8s/') }}"
+          - list: "request.object.spec.initContainers[] || []"
+            preconditions:
+              all:
+                - key: "{{element.image}}"
+                  operator: Equals
+                  value: "registry.k8s.io/*"
+            patchStrategicMerge:
+              spec:
+                initContainers:
+                  - (name): "{{element.name}}"
+                    image: "{{ regex_replace_all('^registry\\.k8s\\.io/', element.image, 'zot.mrcontainer.nl/k8s/') }}"
+    # GCR (gcr.io)
+    - name: rewrite-gcr
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+                - zot
+      preconditions:
+        all:
+          - key: "{{request.operation}}"
+            operator: In
+            value: ["CREATE", "UPDATE"]
+      mutate:
+        foreach:
+          - list: "request.object.spec.containers[]"
+            preconditions:
+              all:
+                - key: "{{element.image}}"
+                  operator: Equals
+                  value: "gcr.io/*"
+            patchStrategicMerge:
+              spec:
+                containers:
+                  - (name): "{{element.name}}"
+                    image: "{{ regex_replace_all('^gcr\\.io/', element.image, 'zot.mrcontainer.nl/gcr/') }}"
+          - list: "request.object.spec.initContainers[] || []"
+            preconditions:
+              all:
+                - key: "{{element.image}}"
+                  operator: Equals
+                  value: "gcr.io/*"
+            patchStrategicMerge:
+              spec:
+                initContainers:
+                  - (name): "{{element.name}}"
+                    image: "{{ regex_replace_all('^gcr\\.io/', element.image, 'zot.mrcontainer.nl/gcr/') }}"
+    # NVCR (nvcr.io)
+    - name: rewrite-nvcr
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+                - zot
+      preconditions:
+        all:
+          - key: "{{request.operation}}"
+            operator: In
+            value: ["CREATE", "UPDATE"]
+      mutate:
+        foreach:
+          - list: "request.object.spec.containers[]"
+            preconditions:
+              all:
+                - key: "{{element.image}}"
+                  operator: Equals
+                  value: "nvcr.io/*"
+            patchStrategicMerge:
+              spec:
+                containers:
+                  - (name): "{{element.name}}"
+                    image: "{{ regex_replace_all('^nvcr\\.io/', element.image, 'zot.mrcontainer.nl/nvcr/') }}"
+          - list: "request.object.spec.initContainers[] || []"
+            preconditions:
+              all:
+                - key: "{{element.image}}"
+                  operator: Equals
+                  value: "nvcr.io/*"
+            patchStrategicMerge:
+              spec:
+                initContainers:
+                  - (name): "{{element.name}}"
+                    image: "{{ regex_replace_all('^nvcr\\.io/', element.image, 'zot.mrcontainer.nl/nvcr/') }}"

@@ -1,0 +1,40 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-resource-limits
+  annotations:
+    policies.kyverno.io/title: Require Resource Limits
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      All containers should define memory limits to prevent unbounded resource
+      usage on resource-constrained Raspberry Pi CM4 nodes.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: validate-memory-limits
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+      validate:
+        message: >-
+          Container '{{request.object.spec.containers[*].name}}' must define
+          resources.limits.memory.
+        foreach:
+          - list: "request.object.spec.[initContainers, containers][]"
+            deny:
+              conditions:
+                all:
+                  - key: "{{ element.resources.limits.memory || '' }}"
+                    operator: Equals
+                    value: ""

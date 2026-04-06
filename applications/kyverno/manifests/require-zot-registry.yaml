@@ -1,0 +1,57 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-zot-registry
+  annotations:
+    policies.kyverno.io/title: Require Zot Registry
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      All container images in application namespaces must be pulled through the
+      Zot registry (zot.mrcontainer.nl) to ensure they are scanned for
+      vulnerabilities by Trivy. Implements D10 (enforce registry usage).
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: validate-image-registry
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+                - argocd
+                - tailscale
+                - metallb-system
+                - cert-manager
+                - external-dns
+                - external-secrets
+                - longhorn-system
+                - kyverno
+                - policy-reporter
+                - tekton-pipelines
+                - tekton-operator
+                - cloudnativepg
+                - coredns
+                - dnscrypt-proxy
+                - zot
+      validate:
+        message: >-
+          Image '{{request.object.spec.containers[*].image}}' is not from the
+          Zot registry. All images must be pulled through zot.mrcontainer.nl
+          for vulnerability scanning. Use zot.mrcontainer.nl/<upstream>/<image>:<tag>.
+        foreach:
+          - list: "request.object.spec.[initContainers, containers][]"
+            deny:
+              conditions:
+                all:
+                  - key: "{{element.image}}"
+                    operator: NotEquals
+                    value: "zot.mrcontainer.nl/*"

@@ -1,0 +1,45 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: mutate-default-security-context
+  annotations:
+    policies.kyverno.io/title: Default Security Context
+    policies.kyverno.io/category: Pod Security
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      Injects security context defaults on containers that do not explicitly
+      set them. Does not override existing values.
+spec:
+  rules:
+    - name: default-security-context
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+                - longhorn-system
+                - metallb-system
+                - tailscale
+                - tekton-pipelines
+                - tekton-operator
+      mutate:
+        foreach:
+          - list: "request.object.spec.containers[]"
+            patchStrategicMerge:
+              spec:
+                containers:
+                  - (name): "{{ element.name }}"
+                    securityContext:
+                      +(runAsNonRoot): true
+                      +(readOnlyRootFilesystem): true
+                      +(allowPrivilegeEscalation): false
+                      +(capabilities):
+                        drop:
+                          - ALL

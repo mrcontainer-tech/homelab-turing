@@ -65,7 +65,7 @@ configFiles:
               "tlsVerify": true,
               "maxRetries": 3,
               "retryDelay": "5m",
-              "content": [{ "prefix": "**" }]
+              "content": [{ "prefix": "**", "destination": "/dockerhub" }]
             },
             {
               "urls": ["https://ghcr.io"],
@@ -73,7 +73,7 @@ configFiles:
               "tlsVerify": true,
               "maxRetries": 3,
               "retryDelay": "5m",
-              "content": [{ "prefix": "**" }]
+              "content": [{ "prefix": "**", "destination": "/ghcr" }]
             },
             {
               "urls": ["https://quay.io"],
@@ -81,7 +81,7 @@ configFiles:
               "tlsVerify": true,
               "maxRetries": 3,
               "retryDelay": "5m",
-              "content": [{ "prefix": "**" }]
+              "content": [{ "prefix": "**", "destination": "/quay" }]
             },
             {
               "urls": ["https://lscr.io"],
@@ -89,7 +89,7 @@ configFiles:
               "tlsVerify": true,
               "maxRetries": 3,
               "retryDelay": "5m",
-              "content": [{ "prefix": "**" }]
+              "content": [{ "prefix": "**", "destination": "/lscr" }]
             },
             {
               "urls": ["https://registry.k8s.io"],
@@ -97,7 +97,7 @@ configFiles:
               "tlsVerify": true,
               "maxRetries": 3,
               "retryDelay": "5m",
-              "content": [{ "prefix": "**" }]
+              "content": [{ "prefix": "**", "destination": "/k8s" }]
             },
             {
               "urls": ["https://gcr.io"],
@@ -105,7 +105,7 @@ configFiles:
               "tlsVerify": true,
               "maxRetries": 3,
               "retryDelay": "5m",
-              "content": [{ "prefix": "**" }]
+              "content": [{ "prefix": "**", "destination": "/gcr" }]
             },
             {
               "urls": ["https://nvcr.io"],
@@ -113,7 +113,7 @@ configFiles:
               "tlsVerify": true,
               "maxRetries": 3,
               "retryDelay": "5m",
-              "content": [{ "prefix": "**" }]
+              "content": [{ "prefix": "**", "destination": "/nvcr" }]
             }
           ]
         }

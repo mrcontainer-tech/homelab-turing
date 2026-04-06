@@ -1,0 +1,35 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-labels
+  annotations:
+    policies.kyverno.io/title: Require Standard Labels
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: low
+    policies.kyverno.io/description: >-
+      All Pods should have the app.kubernetes.io/name label for consistent
+      identification and service discovery.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: validate-app-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+      validate:
+        message: >-
+          Pod must have the 'app.kubernetes.io/name' label.
+        pattern:
+          metadata:
+            labels:
+              app.kubernetes.io/name: "?*"
