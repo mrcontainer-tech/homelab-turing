@@ -30,6 +30,11 @@ spec:
                 - tekton-pipelines
                 - tekton-operator
                 - zot
+                - homepage
+                - media
+                - mealie
+                - miniflux
+                - linkding
       mutate:
         foreach:
           - list: "request.object.spec.containers[]"
