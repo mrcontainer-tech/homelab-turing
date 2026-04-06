@@ -1,0 +1,35 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: flowfin-build-trigger
+  namespace: tekton-pipelines
+spec:
+  params:
+    - name: git-revision
+    - name: git-url
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: flowfin-build-
+      spec:
+        pipelineRef:
+          name: flowfin-build
+        params:
+          - name: git-url
+            value: "$(tt.params.git-url)"
+          - name: git-revision
+            value: "$(tt.params.git-revision)"
+          - name: image-tag
+            value: "$(tt.params.git-revision)"
+        workspaces:
+          - name: shared-workspace
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                storageClassName: longhorn
+                resources:
+                  requests:
+                    storage: 1Gi
+        serviceAccountName: tekton-ci

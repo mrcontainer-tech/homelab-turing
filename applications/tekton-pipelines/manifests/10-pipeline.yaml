@@ -1,0 +1,103 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: flowfin-build
+  namespace: tekton-pipelines
+spec:
+  params:
+    - name: git-url
+      type: string
+      default: "git@github.com:scholtenmartijn/flowfin.git"
+    - name: git-revision
+      type: string
+      default: "main"
+    - name: image-tag
+      type: string
+      default: "latest"
+  workspaces:
+    - name: shared-workspace
+  tasks:
+    - name: clone
+      taskRef:
+        resolver: hub
+        params:
+          - name: catalog
+            value: tekton-catalog-tasks
+          - name: type
+            value: artifact
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: version
+            value: "0.9"
+      params:
+        - name: url
+          value: "$(params.git-url)"
+        - name: revision
+          value: "$(params.git-revision)"
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+
+    - name: build-backend
+      runAfter: ["clone"]
+      taskRef:
+        resolver: hub
+        params:
+          - name: catalog
+            value: tekton-catalog-tasks
+          - name: type
+            value: artifact
+          - name: kind
+            value: task
+          - name: name
+            value: kaniko
+          - name: version
+            value: "0.7"
+      params:
+        - name: IMAGE
+          value: "zot-chart.zot.svc:5000/flowfin/backend:$(params.image-tag)"
+        - name: CONTEXT
+          value: "backend"
+        - name: DOCKERFILE
+          value: "backend/Dockerfile"
+        - name: EXTRA_ARGS
+          value:
+            - "--insecure"
+            - "--skip-tls-verify"
+            - "--custom-platform=linux/arm64"
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+
+    - name: build-frontend
+      runAfter: ["clone"]
+      taskRef:
+        resolver: hub
+        params:
+          - name: catalog
+            value: tekton-catalog-tasks
+          - name: type
+            value: artifact
+          - name: kind
+            value: task
+          - name: name
+            value: kaniko
+          - name: version
+            value: "0.7"
+      params:
+        - name: IMAGE
+          value: "zot-chart.zot.svc:5000/flowfin/frontend:$(params.image-tag)"
+        - name: CONTEXT
+          value: "frontend"
+        - name: DOCKERFILE
+          value: "frontend/Dockerfile"
+        - name: EXTRA_ARGS
+          value:
+            - "--insecure"
+            - "--skip-tls-verify"
+            - "--custom-platform=linux/arm64"
+      workspaces:
+        - name: source
+          workspace: shared-workspace

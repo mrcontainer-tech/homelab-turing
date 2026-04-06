@@ -1,0 +1,24 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: flowfin-webhook
+  namespace: tekton-pipelines
+spec:
+  serviceAccountName: tekton-ci
+  triggers:
+    - name: github-push
+      bindings:
+        - ref: github-push
+      template:
+        ref: flowfin-build-trigger
+      interceptors:
+        - ref:
+            name: "github"
+          params:
+            - name: "eventTypes"
+              value: ["push"]
+        - ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "body.ref == 'refs/heads/main'"
