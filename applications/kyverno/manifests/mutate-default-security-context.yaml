@@ -31,11 +31,6 @@ spec:
                 - tekton-pipelines
                 - tekton-operator
                 - zot
-                - homepage
-                - media
-                - mealie
-                - miniflux
-                - linkding
                 - kyverno
                 - policy-reporter
       mutate:
@@ -49,6 +44,8 @@ spec:
                       +(runAsNonRoot): true
                       +(readOnlyRootFilesystem): true
                       +(allowPrivilegeEscalation): false
+                      +(seccompProfile):
+                        type: RuntimeDefault
                       +(capabilities):
                         drop:
                           - ALL
