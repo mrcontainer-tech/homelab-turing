@@ -34,11 +34,6 @@ spec:
             - .spec.data[].remoteRef.decodingStrategy
             - .spec.data[].remoteRef.metadataPolicy
             - .spec.dataFrom
-        - group: apps
-          kind: Deployment
-          jqPathExpressions:
-            - .spec.template.spec.containers[].securityContext
-            - .spec.template.spec.initContainers[]?.securityContext
       syncPolicy:
         automated:
           prune: true
