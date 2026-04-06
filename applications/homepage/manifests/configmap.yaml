@@ -93,7 +93,7 @@ data:
         - Claude:
             - abbr: Claude
               href: https://claude.ai/
-              icon: https://claude.ai/images/claude_app_icon.png
+              icon: si-anthropic
         - Tweakers:
             - abbr: Tweakers
               href: https://tweakers.net/
@@ -126,7 +126,6 @@ data:
             href: https://tekton.mrcontainer.nl/
             description: CI/CD pipelines
             icon: mdi-pipe
-            siteMonitor: https://tekton.mrcontainer.nl/
     - Observability:
         - Grafana:
             href: https://grafana.mrcontainer.nl/
@@ -196,7 +195,7 @@ data:
         - qBittorrent:
             href: https://qb.mrcontainer.nl/
             description: Torrent client
-            icon: https://qb.mrcontainer.nl/images/qbittorrent32.png
+            icon: si-qbittorrent
             siteMonitor: https://qb.mrcontainer.nl/
             widget:
               type: qbittorrent
@@ -256,15 +255,6 @@ data:
           cpu: true
           memory: true
           showLabel: true
-
-    - resources:
-        backend: resources
-        expanded: true
-        cpu: true
-        memory: true
-        disk: /
-        cputemp: true
-        uptime: true
 
     - longhorn:
         expanded: true
