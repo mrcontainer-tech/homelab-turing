@@ -49,6 +49,22 @@ spec:
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{ .name }}'
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jqPathExpressions:
+            - .spec.template.spec.containers[].image
+            - .spec.template.spec.initContainers[]?.image
+        - group: apps
+          kind: StatefulSet
+          jqPathExpressions:
+            - .spec.template.spec.containers[].image
+            - .spec.template.spec.initContainers[]?.image
+        - group: apps
+          kind: DaemonSet
+          jqPathExpressions:
+            - .spec.template.spec.containers[].image
+            - .spec.template.spec.initContainers[]?.image
       syncPolicy:
         automated:
           prune: true
@@ -56,3 +72,4 @@ spec:
         syncOptions:
           - CreateNamespace=false
           - ServerSideApply=true
+          - RespectIgnoreDifferences=true
