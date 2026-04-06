@@ -9,7 +9,7 @@ spec:
   pipeline:
     enable-api-fields: beta
     # Kaniko for rootless image builds (no Docker-in-Docker)
-    set-security-context: "true"
+    set-security-context: true
   pruner:
     # Auto-cleanup of completed TaskRuns and PipelineRuns
     schedule: "0 2 * * *"
