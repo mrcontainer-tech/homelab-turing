@@ -24,6 +24,7 @@ spec:
                 - kube-system
                 - kube-public
                 - kube-node-lease
+                - kube-prometheus-stack
                 - longhorn-system
                 - metallb-system
                 - tailscale
@@ -35,6 +36,8 @@ spec:
                 - mealie
                 - miniflux
                 - linkding
+                - kyverno
+                - policy-reporter
       mutate:
         foreach:
           - list: "request.object.spec.containers[]"
