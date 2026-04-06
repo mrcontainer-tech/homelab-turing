@@ -120,6 +120,23 @@ configFiles:
       }
     }
 
+# Pod security context (required for PSS restricted profile)
+securityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container security context
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
 # ARM64-appropriate resource limits
 resources:
   requests:
