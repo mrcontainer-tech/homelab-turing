@@ -23,16 +23,21 @@ homelab-turing/
 │   ├── external-secrets/
 │   ├── dnscrypt-proxy/
 │   ├── coredns/
-│   └── namespaces/
+│   ├── tailscale/             # Tailscale operator (remote access)
+│   ├── cloudnativepg/         # PostgreSQL operator
+│   └── tekton-operator/       # Tekton CI/CD operator
 │
 ├── applications/              # Workload layer
-│   ├── kube-prometheus-stack/ # Monitoring
+│   ├── kube-prometheus-stack/ # Monitoring (Prometheus + Grafana)
 │   ├── media-server/          # Jellyfin, Jellyseerr
-│   ├── harbor/                # Container registry
+│   ├── zot/                   # OCI container registry
 │   ├── kyverno/               # Policy engine
 │   ├── policy-reporter/       # Policy enforcement reporting
 │   ├── homepage/              # Homelab landing page
-│   └── tokito/
+│   ├── tekton-pipelines/      # CI/CD pipelines and triggers
+│   ├── linkding/              # Bookmark manager
+│   ├── mealie/                # Recipe manager
+│   └── miniflux/              # RSS feed reader
 │
 ├── appsets/                    # ArgoCD ApplicationSets (app of apps)
 │   ├── bootstrap.yaml                                 # Root Application — watches this directory
@@ -130,7 +135,7 @@ kubectl apply --dry-run=client -f core-components/<component>/manifests/
 
 ### Naming
 
-- **Core components**: Use `-system` suffix (e.g., `metallb-system`, `longhorn-system`)
+- **Core components**: Some use `-system` suffix (e.g., `metallb-system`, `longhorn-system`), others use plain names (e.g., `tailscale`, `cloudnativepg`)
 - **Applications**: Use descriptive names (e.g., `media-server`, `kube-prometheus-stack`)
 - **Namespaces**: Match the component name
 
@@ -144,8 +149,8 @@ kubectl apply --dry-run=client -f core-components/<component>/manifests/
 
 ### Namespace Management
 
-- Core components create their own namespaces
-- Application namespaces are pre-created in `core-components/namespaces/manifests/`
+- Each component defines its own namespace in its `manifests/` directory (e.g., `namespace.yaml`)
+- Namespaces match the component directory name
 
 ### Values Files
 
@@ -160,26 +165,50 @@ kubectl apply --dry-run=client -f core-components/<component>/manifests/
 
 | Component | Purpose | Notes |
 |-----------|---------|-------|
-| **ArgoCD** | GitOps controller | Currently uses kubectl patch for TLS config (TODO: Helm install) |
+| **ArgoCD** | GitOps controller | Currently uses `--insecure` flag (TODO: Helm install) |
 | **MetalLB** | Load balancer | Provides LoadBalancer IPs on bare metal |
-| **Traefik** | Ingress controller | Deployed separately (not bundled with Talos) |
 | **Longhorn** | Block storage | SSD on Node 3, S3 backup |
 | **cert-manager** | Certificate management | Route53 DNS-01 challenge |
 | **external-dns** | DNS automation | Route53 integration |
-| **external-secrets** | Secrets management | Sync from external sources |
+| **external-secrets** | Secrets management | Syncs from AWS Secrets Manager |
 | **CoreDNS** | DNS | Custom config to avoid Tailscale DNS |
 | **dnscrypt-proxy** | Encrypted DNS | Multi-provider DoH/DNSCrypt |
+| **Tailscale** | Remote access | Operator with ingress class for Tailscale-only services |
+| **CloudNativePG** | PostgreSQL operator | Manages PostgreSQL clusters for applications |
+| **Tekton Operator** | CI/CD operator | Installs Tekton Pipelines and Dashboard |
 
 ### Applications
 
 | Application | Purpose |
 |-------------|---------|
 | **kube-prometheus-stack** | Monitoring (Prometheus + Grafana) |
-| **Harbor** | Container registry |
+| **Zot** | OCI container registry (replaced Harbor) |
 | **Kyverno** | Policy engine |
 | **media-server** | Jellyfin + Jellyseerr |
 | **Policy Reporter** | Policy enforcement reporting |
 | **Homepage** | Homelab landing page |
+| **Tekton Pipelines** | CI/CD pipelines, triggers, and event listeners |
+| **Linkding** | Bookmark manager |
+| **Mealie** | Recipe manager |
+| **Miniflux** | RSS feed reader |
+
+---
+
+## Common Patterns
+
+### Dual Ingress (Public + Tailscale)
+
+Most services expose two ingresses:
+- `ingress.yaml` — public ingress with TLS via cert-manager (e.g., `argocd.mrcontainer.nl`)
+- `ingress-tailscale.yaml` — Tailscale-only ingress using `ingressClassName: tailscale`, backend on port **80** (HTTP)
+
+### PostgreSQL with CloudNativePG
+
+Applications that need a database (linkding, mealie, miniflux) use CloudNativePG clusters defined in `pg-cluster.yaml` within their manifests directory.
+
+### External Secrets
+
+Secrets are synced from AWS Secrets Manager via the external-secrets operator. Components define an `external-secret.yaml` in their manifests directory.
 
 ---
 
@@ -187,12 +216,7 @@ kubectl apply --dry-run=client -f core-components/<component>/manifests/
 
 ### ArgoCD TLS Configuration
 
-Currently disabled via `kubectl patch`:
-```bash
-kubectl -n argocd patch deployment argocd-server \
-  --type='json' \
-  -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--insecure"}]'
-```
+ArgoCD server runs with `--insecure` flag, serving plain HTTP. TLS is terminated at the ingress layer.
 
 **TODO**: Replace with proper Helm install and values.yaml for GitOps compliance.
 
@@ -285,6 +309,19 @@ helm template <name> <repo-name>/<chart> --version <ver> -f values.yaml
 
 The `adr/` directory contains architectural decisions. Check there for context on technology choices and patterns.
 
+| ADR | Topic |
+|-----|-------|
+| D15 | Encrypted DNS (dnscrypt-proxy) |
+| D16 | Talos Linux migration |
+| D17 | CloudNativePG for PostgreSQL |
+| D18 | CI system (Tekton) |
+| D19 | OIDC/AWS authentication |
+| D20 | Harbor on ARM |
+| D21 | Cluster security |
+| D22 | Tailscale remote access |
+| D23 | Security hardening |
+| D24 | Zot registry (replaced Harbor) |
+
 ---
 
 ## Additional Documentation
@@ -292,4 +329,5 @@ The `adr/` directory contains architectural decisions. Check there for context o
 - `VISION.md` - Project philosophy and component rationale
 - `README.md` - Quick start and operational guide
 - `TURING-INSTALL.md` - Initial cluster setup
+- `VIM-CHEATSHEET.md` - Neovim key bindings reference
 - Component-specific: `core-components/<component>/README.md`
