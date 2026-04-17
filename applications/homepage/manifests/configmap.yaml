@@ -67,33 +67,33 @@ data:
         - Homelab-turing:
             - abbr: GH
               href: https://github.com/mrcontainer-tech/homelab-turing
-              icon: https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png
+              icon: github
         - Notes:
             - abbr: Notes
               href: https://github.com/scholtenmartijn/zk-vault
-              icon: https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png
+              icon: github
     - Admin:
         - Tailscale:
             - abbr: TS
               href: https://login.tailscale.com/admin
-              icon: mdi-vpn
+              icon: tailscale
         - AWS Console:
             - abbr: AWS
               href: https://eu-west-1.console.aws.amazon.com/
-              icon: mdi-aws
+              icon: aws
         - ArgoCD Docs:
             - abbr: Argo
               href: https://argo-cd.readthedocs.io/en/stable/
-              icon: https://argocd.mrcontainer.nl/assets/favicon/favicon-32x32.png
+              icon: argocd
     - Bookmarks:
         - Github:
             - abbr: GH
               href: https://github.com/
-              icon: https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png
+              icon: github
         - Claude:
             - abbr: Claude
               href: https://claude.ai/
-              icon: si-anthropic
+              icon: claude-ai
         - Tweakers:
             - abbr: Tweakers
               href: https://tweakers.net/
@@ -103,45 +103,45 @@ data:
         - ArgoCD:
             href: https://argocd.mrcontainer.nl/
             description: GitOps ftw!
-            icon: https://argocd.mrcontainer.nl/assets/favicon/favicon-32x32.png
+            icon: argocd
             siteMonitor: https://argocd.mrcontainer.nl/
         - Longhorn:
             href: https://longhorn.mrcontainer.nl/
             description: Distributed block storage
-            icon: http://longhorn.mrcontainer.nl/favicon.ico
+            icon: longhorn
             siteMonitor: https://longhorn.mrcontainer.nl/
     - Security:
         - Zot Registry:
             href: https://zot.mrcontainer.nl/
             description: OCI container registry
-            icon: mdi-docker
+            icon: zot
             siteMonitor: https://zot.mrcontainer.nl/
         - Kyverno:
             href: https://policy-reporter.mrcontainer.nl/
             description: Policy engine
-            icon: mdi-shield-check
+            icon: kyverno
             siteMonitor: https://policy-reporter.mrcontainer.nl/
     - CI/CD:
         - Tekton Dashboard:
             href: https://tekton.mrcontainer.nl/
             description: CI/CD pipelines
-            icon: mdi-pipe
+            icon: tekton
     - Observability:
         - Grafana:
             href: https://grafana.mrcontainer.nl/
             description: Metrics visualization
-            icon: https://grafana.mrcontainer.nl/public/img/fav32.png
+            icon: grafana
             siteMonitor: https://grafana.mrcontainer.nl/
         - Prometheus:
             href: https://prometheus.mrcontainer.nl/
             description: Metrics & alerting
-            icon: https://prometheus.mrcontainer.nl/favicon.svg
+            icon: prometheus
             ping: http://prometheus-operated.kube-prometheus-stack.svc.cluster.local:9090
     - Media:
         - Jellyfin:
             href: https://jellyfin.mrcontainer.nl/
             description: Media server
-            icon: https://jellyfin.org/images/favicon.ico
+            icon: jellyfin
             siteMonitor: https://jellyfin.mrcontainer.nl/
             widget:
               type: jellyfin
@@ -150,7 +150,7 @@ data:
         - Jellyseerr:
             href: https://jellyseerr.mrcontainer.nl/
             description: Media requests
-            icon: https://jellyseerr.mrcontainer.nl/favicon-32x32.png
+            icon: jellyseerr
             siteMonitor: https://jellyseerr.mrcontainer.nl/
             widget:
               type: jellyseerr
@@ -159,7 +159,7 @@ data:
         - Sonarr:
             href: https://sonarr.mrcontainer.nl/
             description: TV show manager
-            icon: https://sonarr.tv/img/favicon.ico
+            icon: sonarr
             siteMonitor: https://sonarr.mrcontainer.nl/
             widget:
               type: sonarr
@@ -168,7 +168,7 @@ data:
         - Prowlarr:
             href: https://prowlarr.mrcontainer.nl/
             description: Indexer manager
-            icon: https://prowlarr.com/img/favicon.ico
+            icon: prowlarr
             siteMonitor: https://prowlarr.mrcontainer.nl/
             widget:
               type: prowlarr
@@ -177,7 +177,7 @@ data:
         - Radarr:
             href: https://radarr.mrcontainer.nl/
             description: Movie manager
-            icon: https://radarr.mrcontainer.nl/Content/Images/Icons/favicon-32x32.png
+            icon: radarr
             siteMonitor: https://radarr.mrcontainer.nl/
             widget:
               type: radarr
@@ -186,7 +186,7 @@ data:
         - Bazarr:
             href: https://bazarr.mrcontainer.nl/
             description: Subtitle manager
-            icon: mdi-subtitles
+            icon: bazarr
             siteMonitor: https://bazarr.mrcontainer.nl/
             widget:
               type: bazarr
@@ -195,7 +195,7 @@ data:
         - qBittorrent:
             href: https://qb.mrcontainer.nl/
             description: Torrent client
-            icon: si-qbittorrent
+            icon: qbittorrent
             siteMonitor: https://qb.mrcontainer.nl/
             widget:
               type: qbittorrent
@@ -206,7 +206,7 @@ data:
         - Miniflux:
             href: https://miniflux.mrcontainer.nl/
             description: RSS reader
-            icon: mdi-rss
+            icon: miniflux
             siteMonitor: https://miniflux.mrcontainer.nl/
             widget:
               type: miniflux
@@ -215,12 +215,12 @@ data:
         - Linkding:
             href: https://linkding.mrcontainer.nl/
             description: Bookmark manager
-            icon: mdi-bookmark-multiple
+            icon: linkding
             siteMonitor: https://linkding.mrcontainer.nl/
         - Mealie:
             href: https://mealie.mrcontainer.nl/
             description: Recipe manager
-            icon: mdi-food
+            icon: mealie
             siteMonitor: https://mealie.mrcontainer.nl/
   widgets.yaml: |
     - greeting:
