@@ -25,12 +25,14 @@ Tailscale is already running on the k3s nodes (evidenced by the CoreDNS custom c
 - Access homepage and media server (Jellyfin, Jellyseerr) from phone while traveling
 - Manage the full *arr stack (Sonarr, Radarr, Prowlarr, Bazarr, qBittorrent) remotely
 - Monitor cluster health via Grafana from anywhere
+- Run `kubectl` against the cluster from a MacBook or Linux desktop on any network
 - Future services: financial app, bookmarking, photo archive — all need remote access from day one
 
 ## Goals
 
 - Access homelab services securely from personal devices (phone, laptop) anywhere
 - Priority services: homepage, Jellyfin, Jellyseerr, Grafana
+- Remote `kubectl` access to the Kubernetes API for cluster administration
 - Easy to add new services over time (single manifest per service)
 - Minimal disruption to existing Traefik + cert-manager + external-dns stack
 - GitOps-managed deployment via ArgoCD
@@ -259,6 +261,62 @@ spec:
 ```
 
 Commit to Git → ArgoCD syncs → service appears on MagicDNS with auto-TLS.
+
+---
+
+## Kubernetes API Access (kubectl over Tailscale)
+
+The Tailscale operator exposes the Kubernetes API server on the tailnet via its built-in **API Server Proxy**. Enabled through `apiServerProxyConfig.mode: "noauth"` in `core-components/tailscale/values.yaml`, the operator pod registers on the tailnet as `tailscale-operator` and reverse-proxies API requests into the cluster.
+
+### Mode: noauth
+
+`noauth` means the proxy is a network shim only — it forwards requests without impersonating users. Clients authenticate to the Kubernetes API with their own kubeconfig credentials (for this homelab: the k3s admin cert from `/etc/rancher/k3s/k3s.yaml`). Tailscale provides the encrypted network path and its own server certificate for the proxy endpoint.
+
+This was chosen over `auth` mode (where the operator maps Tailscale identity to Kubernetes RBAC via grants) because:
+
+- Single-user homelab — no multi-user RBAC requirement
+- Cluster-admin kubeconfig is already available on the admin's laptops
+- `auth` adds Tailscale grants + RBAC bindings overhead with no tangible benefit at this scale
+- Upgrade path is trivial: flip the value to `"auth"` and add grants when the need arises
+
+### ACL rule
+
+The ACL samples earlier in this ADR do not grant access to the operator device. Add:
+
+```jsonc
+// allow admin devices to reach the API server proxy
+{"action": "accept", "src": ["autogroup:owner"], "dst": ["tag:k8s-operator:*"]}
+```
+
+### Client setup (MacBook / Linux desktop)
+
+1. Install Tailscale and join the tailnet:
+
+   ```bash
+   # macOS
+   brew install --cask tailscale
+   # Linux
+   curl -fsSL https://tailscale.com/install.sh | sh
+
+   sudo tailscale up
+   tailscale status | grep tailscale-operator
+   ```
+
+2. Seed `~/.kube/config` with the k3s admin credentials (copy from `/etc/rancher/k3s/k3s.yaml` on a cluster node).
+
+3. Rewrite the server URL to use the Tailscale API proxy:
+
+   ```bash
+   tailscale configure kubeconfig tailscale-operator
+   ```
+
+   This swaps `cluster.server` to `https://tailscale-operator` and installs the Tailscale-issued CA. The client cert/key from the k3s kubeconfig remains the auth material.
+
+4. Test off the home network (cellular / hotspot) to confirm the path runs over Tailscale, not the LAN:
+
+   ```bash
+   kubectl get nodes
+   ```
 
 ---
 

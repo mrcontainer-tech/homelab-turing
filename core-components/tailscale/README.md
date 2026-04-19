@@ -37,6 +37,17 @@ Priority services exposed via MagicDNS:
 | Jellyseerr | `jellyseerr.tailnet-name.ts.net` | jellyseerr:5055 |
 | Grafana | `grafana.tailnet-name.ts.net` | kube-prometheus-stack-chart-grafana:80 |
 
+## kubectl Access via API Server Proxy
+
+The operator also exposes the Kubernetes API server on the tailnet (`apiServerProxyConfig.mode: "noauth"` in `values.yaml`). From a Tailscale-connected MacBook or Linux desktop:
+
+1. `tailscale up` and confirm the `tailscale-operator` device resolves.
+2. Copy the k3s admin kubeconfig from `/etc/rancher/k3s/k3s.yaml` into `~/.kube/config`.
+3. Run `tailscale configure kubeconfig tailscale-operator` — this swaps the server URL to `https://tailscale-operator` and installs the proxy CA.
+4. `kubectl get nodes` should now work from any network.
+
+The Tailscale ACL must allow the admin device to reach `tag:k8s-operator`. See [D22 § Kubernetes API Access](../../adr/D22-tailscale-remote-access.md#kubernetes-api-access-kubectl-over-tailscale) for the rule and full rationale.
+
 ## Adding a New Service
 
 To expose any service via Tailscale, create an Ingress manifest in the service's `manifests/` directory:
