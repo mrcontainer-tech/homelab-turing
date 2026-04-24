@@ -242,6 +242,8 @@ This ensures the user maintains full control over what enters the Git history.
 
 **NEVER use `kubectl apply`, `kubectl delete`, `kubectl patch`, `kubectl edit`, or any command that modifies cluster state.** All cluster changes must go through GitOps (commit to Git → ArgoCD syncs).
 
+**Do NOT run `kubectl apply` even with `--dry-run=client` or `--dry-run=server`.** This is a fully GitOps-managed repository — validation belongs in the PR/ArgoCD layer, not via direct kubectl invocations against the cluster. For local YAML validation, prefer `helm template`, `kubeval`, `kubeconform`, or `yamllint`.
+
 ---
 
 ### Additional Use Cases
