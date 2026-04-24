@@ -9,7 +9,8 @@ operatorConfig:
     kubectl.kubernetes.io/restartedAt: "2026-04-05T12:00:00Z"
 
 apiServerProxyConfig:
-  mode: "noauth"
+  # mode: "noauth"
+  mode: "true"
 
 proxyConfig:
   defaultTags: "tag:k8s"
