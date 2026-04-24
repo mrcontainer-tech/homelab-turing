@@ -14,11 +14,11 @@ spec:
             repoURL: http://zotregistry.dev/helm-charts
             version: 0.1.104
             releaseName: zot-chart
-          - name: kube-prometheus-stack
-            chart: kube-prometheus-stack
-            repoURL: https://prometheus-community.github.io/helm-charts
-            version: 75.7.0
-            releaseName: kube-prometheus-stack
+          # kube-prometheus-stack is managed as a standalone Application in
+          # appsets/kube-prometheus-stack-chart-application.yaml — the shared
+          # ignoreDifferences block below breaks its Grafana initContainers
+          # because this namespace is excluded from the Kyverno image-mutation
+          # policy. See adr/D25-kps-standalone-application.md.
           - name: kyverno
             chart: kyverno
             repoURL: https://kyverno.github.io/kyverno/
