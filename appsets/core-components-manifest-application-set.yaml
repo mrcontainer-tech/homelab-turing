@@ -3,6 +3,10 @@ kind: ApplicationSet
 metadata:
   name: core-components-manifests
   namespace: argocd
+  annotations:
+    # Foundation tier — runs before platform and workloads.
+    # See adr/D26-appset-sync-waves.md.
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
@@ -16,6 +20,8 @@ spec:
     metadata:
       # e.g. path="core-components/metallb/manifests" → name="metallb-manifest"
       name: '{{ base (dir .path.path) }}-manifest'
+      annotations:
+        argocd.argoproj.io/sync-wave: "0"
     spec:
       # Using the default project for now
       project: default

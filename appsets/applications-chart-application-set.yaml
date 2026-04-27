@@ -3,22 +3,24 @@ kind: ApplicationSet
 metadata:
   name: applications
   namespace: argocd
+  annotations:
+    # Platform tier — current contents (kyverno, policy-reporter) are platform
+    # policy infrastructure, hence wave 10 alongside applications-infrastructure.
+    # The naming asymmetry is documented in adr/D26-appset-sync-waves.md.
+    argocd.argoproj.io/sync-wave: "10"
 spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
     - list:
         elements:
-          - name: zot
-            chart: zot
-            repoURL: http://zotregistry.dev/helm-charts
-            version: 0.1.104
-            releaseName: zot-chart
-          # kube-prometheus-stack is managed as a standalone Application in
-          # appsets/kube-prometheus-stack-chart-application.yaml — the shared
-          # ignoreDifferences block below breaks its Grafana initContainers
-          # because this namespace is excluded from the Kyverno image-mutation
-          # policy. See adr/D25-kps-standalone-application.md.
+          # Infrastructure-tier charts (kube-prometheus-stack, zot) live in
+          # the sibling appsets/applications-infrastructure-chart-application-set.yaml
+          # — their namespaces are excluded from the Kyverno image-mutation
+          # policy, so the ignoreDifferences block below has no fill-in and
+          # leaves their workloads stuck OutOfSync (or, for newly-rendered
+          # initContainers, fails to apply with "image: Required value").
+          # See adr/D25-applications-infrastructure-appset.md.
           - name: kyverno
             chart: kyverno
             repoURL: https://kyverno.github.io/kyverno/
@@ -33,6 +35,8 @@ spec:
     metadata:
       # e.g. name="harbor-chart"
       name: '{{ .name }}-chart'
+      annotations:
+        argocd.argoproj.io/sync-wave: "10"
     spec:
       project: default
       sources:

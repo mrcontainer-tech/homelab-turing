@@ -1,0 +1,72 @@
+# ApplicationSet for infrastructure-tier applications — charts that other
+# workloads on the cluster depend on, and which therefore deploy before
+# anything Kyverno-mutated can run.
+#
+# These charts also share a more concrete trait: their namespaces are
+# excluded from the Kyverno `mutate-image-registry` ClusterPolicy.
+#   - `zot` is excluded because the registry cannot proxy-pull its own
+#     image through itself.
+#   - `kube-prometheus-stack` is excluded so the observability stack used
+#     to debug a Zot outage doesn't depend on Zot for its image pulls.
+#
+# Because there is no Kyverno mutation, the `ignoreDifferences` /
+# `RespectIgnoreDifferences=true` contract used in the sibling
+# `applications` AppSet (which strips image fields so Kyverno can rewrite
+# them at admission time) doesn't apply here — without a fill-in, ArgoCD
+# would send Deployments / StatefulSets with empty `.image` fields and
+# the API server would reject them. So this AppSet omits that block.
+#
+# See adr/D25-applications-infrastructure-appset.md.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: applications-infrastructure
+  namespace: argocd
+  annotations:
+    # Platform tier — runs after foundation, before workloads.
+    # See adr/D26-appset-sync-waves.md.
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - name: kube-prometheus-stack
+            chart: kube-prometheus-stack
+            repoURL: https://prometheus-community.github.io/helm-charts
+            version: 75.7.0
+            releaseName: kube-prometheus-stack
+          - name: zot
+            chart: zot
+            repoURL: http://zotregistry.dev/helm-charts
+            version: 0.1.104
+            releaseName: zot-chart
+  template:
+    metadata:
+      name: '{{ .name }}-chart'
+      annotations:
+        argocd.argoproj.io/sync-wave: "10"
+    spec:
+      project: default
+      sources:
+        - repoURL: '{{ .repoURL }}'
+          chart: '{{ .chart }}'
+          targetRevision: '{{ .version }}'
+          helm:
+            releaseName: '{{ .releaseName }}'
+            valueFiles:
+              - $values/applications/{{ .name }}/values.yaml
+        - repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
+          targetRevision: main
+          ref: values
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{ .name }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=false
+          - ServerSideApply=true

@@ -11,12 +11,14 @@ spec:
     # Kaniko for rootless image builds (no Docker-in-Docker)
     set-security-context: true
   pruner:
-    # Auto-cleanup of completed TaskRuns and PipelineRuns
+    # Auto-cleanup of completed TaskRuns and PipelineRuns.
+    # The operator's validating webhook rejects setting both `keep` and
+    # `keep-since` simultaneously ("expected exactly one, got both"), so
+    # we keep the count-based bound only.
     schedule: "0 2 * * *"
     resources:
       - taskrun
       - pipelinerun
     keep: 5
-    keep-since: 1440  # 24 hours in minutes
   dashboard:
     readonly: false

@@ -3,6 +3,10 @@ kind: ApplicationSet
 metadata:
   name: applications-manifests
   namespace: argocd
+  annotations:
+    # Workloads tier — runs after foundation and platform.
+    # See adr/D26-appset-sync-waves.md.
+    argocd.argoproj.io/sync-wave: "20"
 spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
@@ -16,6 +20,8 @@ spec:
     metadata:
       # e.g. path="applications/homepage/manifests" → name=homepage-manifest"
       name: '{{ base (dir .path.path) }}-manifest'
+      annotations:
+        argocd.argoproj.io/sync-wave: "20"
     spec:
       # Using the default project for now
       project: default
