@@ -3,6 +3,10 @@ kind: ApplicationSet
 metadata:
   name: core-components
   namespace: argocd
+  annotations:
+    # Foundation tier — runs before platform and workloads.
+    # See adr/D26-appset-sync-waves.md.
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
@@ -48,6 +52,8 @@ spec:
     metadata:
       # e.g. name="cert-manager-chart"
       name: '{{ .name }}-chart'
+      annotations:
+        argocd.argoproj.io/sync-wave: "0"
     spec:
       project: default
       sources:

@@ -19,7 +19,7 @@ spec:
         kubernetes.io/hostname: node4
       containers:
         - name: gluetun
-          image: qmcgaw/gluetun:v3.41.1
+          image: zot.mrcontainer.nl/dockerhub/qmcgaw/gluetun:v3.41.1
           securityContext:
             capabilities:
               add:
@@ -80,7 +80,7 @@ spec:
             failureThreshold: 6
 
         - name: qbittorrent
-          image: lscr.io/linuxserver/qbittorrent:5.1.4
+          image: zot.mrcontainer.nl/lscr/linuxserver/qbittorrent:5.1.4
           env:
             - name: TZ
               valueFrom:
