@@ -22,8 +22,13 @@ data:
           fallthrough
         }
         prometheus :9153
-        forward . dnscrypt-proxy.kube-system.svc.cluster.local {
-          policy round_robin
+        # The forward plugin accepts ONLY IP addresses (or a resolv.conf
+        # path) — never DNS names; CoreDNS cannot resolve anything before it
+        # is running. This IP is the pinned ClusterIP of the dnscrypt-proxy
+        # Service (core-components/dnscrypt-proxy/manifests/02-service.yaml).
+        # An invalid forward line here is FATAL on pod start and takes down
+        # cluster DNS — see the June 2026 incident in analysis-report.html.
+        forward . 10.43.24.76 {
           health_check 5s
         }
         cache 30

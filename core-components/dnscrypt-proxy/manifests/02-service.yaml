@@ -9,6 +9,11 @@ metadata:
     app.kubernetes.io/component: dns
 spec:
   type: ClusterIP
+  # Pinned: the CoreDNS Corefile forwards to this IP (the forward plugin
+  # cannot use DNS names). Matches the IP the Service already holds, so
+  # applying this is a no-op. If this ever changes, update
+  # core-components/coredns/manifests/coredns-custom.yaml in the same commit.
+  clusterIP: 10.43.24.76
   selector:
     app.kubernetes.io/name: dnscrypt-proxy
   ports:
