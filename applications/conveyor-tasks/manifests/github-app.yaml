@@ -33,7 +33,7 @@ metadata:
   namespace: conveyor-tasks
 spec:
   appID: "4030951"
-  installID: "<INSTALLATION_ID>"
+  installID: "139682506"
   auth:
     privateKey:
       secretRef:
