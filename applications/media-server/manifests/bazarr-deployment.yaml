@@ -51,14 +51,13 @@ spec:
             - name: media
               mountPath: /movies
               subPath: movies
+          # All bazarr /api/* endpoints require an API key (probes get 401),
+          # and probes cannot send secret headers — so readiness is TCP too.
           readinessProbe:
-            httpGet:
-              path: /api/system/health
+            tcpSocket:
               port: 6767
             initialDelaySeconds: 15
             periodSeconds: 10
-          # Startup/liveness must not depend on bazarr's health endpoint, which
-          # checks sonarr/radarr connectivity; readiness keeps the HTTP check.
           startupProbe:
             tcpSocket:
               port: 6767

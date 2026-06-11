@@ -7,6 +7,11 @@ metadata:
     app: jellyfin
 spec:
   replicas: 1
+  # Pinned to node4 with a single replica: a RollingUpdate surge pod can
+  # never schedule next to the old one (insufficient node memory), which
+  # deadlocks every rollout. Recreate stops the old pod first.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: jellyfin
