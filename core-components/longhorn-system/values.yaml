@@ -14,10 +14,7 @@ metrics:
 persistence:
   defaultClassReplicaCount: 1
 
-defaultSettings:
-  # Bucket + IAM user + ASM secret must exist BEFORE this syncs — see the
-  # backup runbook in README.md. Secret is materialised by
-  # manifests/backup-external-secret.yaml.
-  backupTarget: s3://mrcontainer-homelab-backups@eu-west-1/longhorn
-  backupTargetCredentialSecret: longhorn-backup-secret
+# Backup target is NOT set via defaultSettings: since Longhorn v1.8 those
+# settings are ignored on existing installs. It is configured through the
+# BackupTarget CR in manifests/backup-target.yaml instead.
 

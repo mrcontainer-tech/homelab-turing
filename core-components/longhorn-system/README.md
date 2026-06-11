@@ -31,7 +31,7 @@ createDefaultDiskLabeledNodes: false
 
 ## Backups (runbook)
 
-Backup config lives in `values.yaml` (`defaultSettings.backupTarget`),
+Backup config lives in `manifests/backup-target.yaml` (BackupTarget CR),
 `manifests/backup-external-secret.yaml`, and `manifests/recurring-backup.yaml`.
 The CNPG databases (linkding/mealie/miniflux) reuse the same bucket and
 credentials via `backup-external-secret.yaml` in their own manifests.
@@ -73,10 +73,10 @@ kubectl get cluster -A -o wide                       # ContinuousArchiving condi
 ```
 
 Notes:
-- Longhorn ≥1.8 manages the target through the `default` BackupTarget CR,
-  fed by the Helm `defaultSettings`. If the URL doesn't take effect after a
-  chart upgrade (known Longhorn quirk for settings changed post-install),
-  set it once via the Longhorn UI — the values stay in Git as the record.
+- Longhorn ≥1.8 manages the target through the `default` BackupTarget CR
+  and ignores `defaultSettings.backupTarget` on existing installs (verified
+  live 2026-06-11: setting empty despite synced chart). The CR spec is
+  therefore GitOps-managed directly in `manifests/backup-target.yaml`.
 - CNPG's in-tree `barmanObjectStore` is deprecated upstream in favour of the
   Barman Cloud plugin; it still works on the current operator (chart 0.28).
   Revisit when upgrading CNPG.

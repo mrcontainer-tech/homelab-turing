@@ -1,0 +1,15 @@
+# Longhorn backup target (S3). Since Longhorn v1.8 the backup target is
+# configured via this CR — the chart's defaultSettings.backupTarget is
+# ignored on existing installs, which is why this is managed explicitly.
+# Longhorn creates the "default" BackupTarget itself; ArgoCD server-side
+# apply takes ownership of just these spec fields.
+# Credentials secret is materialised by backup-external-secret.yaml.
+apiVersion: longhorn.io/v1beta2
+kind: BackupTarget
+metadata:
+  name: default
+  namespace: longhorn-system
+spec:
+  backupTargetURL: s3://mrcontainer-homelab-backups@eu-west-1/longhorn
+  credentialSecret: longhorn-backup-secret
+  pollInterval: 5m0s
