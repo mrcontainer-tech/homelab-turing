@@ -1,0 +1,41 @@
+# GitHub App authentication for OpenConveyor agents (App ID 4030951).
+#
+# The App private key (PEM) lives in AWS Secrets Manager as a plaintext
+# secret. ESO mirrors it into the github-app-private-key Secret, and the
+# GithubAccessToken generator below mints short-lived (60m) installation
+# tokens from it. The github-token ExternalSecret in secret.yaml consumes
+# this generator, so agents keep reading /run/secrets/github-token/token
+# unchanged — but the token now rotates automatically and is scoped to
+# the repos the App is installed on.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: github-app-private-key
+  namespace: conveyor-tasks
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: aws-secrets-manager
+    kind: ClusterSecretStore
+  target:
+    name: github-app-private-key
+    creationPolicy: Owner
+  data:
+    - secretKey: privateKey
+      remoteRef:
+        # Plaintext PEM (not JSON) — no property selector.
+        key: homelab/github-app-private-key
+---
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: GithubAccessToken
+metadata:
+  name: github-app-token
+  namespace: conveyor-tasks
+spec:
+  appID: "4030951"
+  installID: "<INSTALLATION_ID>"
+  auth:
+    privateKey:
+      secretRef:
+        name: github-app-private-key
+        key: privateKey
