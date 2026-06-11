@@ -28,24 +28,48 @@ index on 2026-06-11):
 Expect the `argocd-chart` app to briefly show Unknown/Progressing while
 ArgoCD's own server/controller restart mid-sync — it converges on its own.
 
-## Adoption notes (what was checked, 2026-06-11)
+## Adoption notes (what actually happened, 2026-06-11)
 
-- Release name `argocd` renders the same resource names as the manual
-  install (`argocd-server`, `argocd-repo-server`, StatefulSet
-  `argocd-application-controller`, …); `ServerSideApply=true` adopts them
-  in place.
+The adoption was NOT a clean in-place SSA takeover. Two label mismatches
+between the manual install and the chart caused a self-inflicted outage of
+the GitOps loop, resolved with manual surgery. Recorded here so no future
+migration repeats it:
+
+- **Selectors are immutable.** The chart adds
+  `app.kubernetes.io/instance: argocd` to every workload selector; the
+  manual install only had `app.kubernetes.io/name`. The API server rejects
+  selector changes on Deployments/StatefulSets, so all six workloads (not
+  redis, whose selector happened to match) had to be deleted and recreated
+  by the sync. Working order: `--cascade=orphan` delete for
+  `argocd-repo-server` and the application-controller StatefulSet (their
+  pods keep the sync machinery alive), hard delete for the rest, then
+  trigger sync and clean up the orphans.
+- **Services flip before pods do.** The chart Services select on the
+  `instance` label and use *named* targetPorts; old pods had neither, so
+  the first sync emptied the server/repo-server endpoints — UI down and
+  "connection refused" from every app. Stopgaps: label the old pods
+  (`kubectl label pod … app.kubernetes.io/instance=argocd`) and patch the
+  repo-server Service to a numeric targetPort until new pods exist.
+- **A failed automated sync is not retried** for the same revision, and
+  selfHeal does not fire after a failure. With the UI down, the only
+  trigger is patching the Application CR:
+  `kubectl patch application argocd-chart -n argocd --type merge -p '{"operation":{"sync":{"syncStrategy":{"apply":{}}}}}'`
 - `configs.secret.createSecret: false` — the chart must never manage
   `argocd-secret` (live one holds `admin.password`, `server.secretkey`,
-  TLS material; the chart would render it empty).
+  TLS material; the chart would render it empty). Verified untouched after
+  adoption.
 - `server.insecure: true` moved to `argocd-cmd-params-cm` via
   `configs.params`, replacing the container `--insecure` flag. TLS still
   terminates at the ingress (cert-manager).
-- One-time image rollouts on adoption: dex v2.41.1→v2.43.1, redis
+- Image changes that came with adoption: dex v2.41.1→v2.43.1, redis
   7.2.7→7.2.8 (ecr-public mirror).
 - The `argocd-redis` auth secret already existed; the chart's
   `argocd-redis-secret-init` Job only creates it if absent.
 - Pre-adoption backup: `~/argocd-backup-2026-06-11.yaml` (full namespace
   dump, kept outside the repo).
+
+Future minor-version upgrades are unaffected by all of this: the chart now
+owns the selectors, so version bumps are ordinary rolling updates.
 
 ## Recovery
 
