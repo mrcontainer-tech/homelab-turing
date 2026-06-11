@@ -1,0 +1,76 @@
+# Homelab-specific alerts covering the failure modes that went unnoticed in
+# the June 2026 DNS outage: CoreDNS down, ExternalSecret sync failures,
+# ArgoCD app degradation, and Longhorn volume robustness.
+# The `release` label must match the Prometheus ruleSelector.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: homelab-alerts
+  namespace: kube-prometheus-stack
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: homelab.dns
+      rules:
+        - alert: ClusterDNSDown
+          expr: kube_deployment_status_replicas_available{namespace="kube-system", deployment="coredns"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Cluster DNS is down"
+            description: >-
+              CoreDNS has zero available replicas. Everything depending on
+              service discovery (Longhorn CSI, external-secrets, ArgoCD git
+              fetches, cert renewals) will cascade-fail. Note: ArgoCD cannot
+              deploy a fix while DNS is down — manual intervention required.
+    - name: homelab.gitops
+      rules:
+        - alert: ArgoCDAppUnhealthy
+          expr: sum by (name, health_status) (argocd_app_info{health_status=~"Degraded|Missing"}) > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "ArgoCD application {{ $labels.name }} is {{ $labels.health_status }}"
+            description: "Application {{ $labels.name }} has been {{ $labels.health_status }} for 15 minutes."
+        - alert: ArgoCDAppSyncUnknown
+          expr: sum by (name) (argocd_app_info{sync_status="Unknown"}) > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "ArgoCD application {{ $labels.name }} sync status Unknown"
+            description: >-
+              Sync status Unknown usually means ArgoCD cannot compare desired
+              state (repo-server or git unreachable). If all apps are Unknown,
+              suspect cluster DNS.
+    - name: homelab.secrets
+      rules:
+        - alert: ExternalSecretSyncFailed
+          expr: externalsecret_status_condition{condition="Ready", status="False"} == 1
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "ExternalSecret {{ $labels.namespace }}/{{ $labels.name }} failing to sync"
+            description: "ESO cannot sync this secret from AWS Secrets Manager for 15 minutes."
+    - name: homelab.storage
+      rules:
+        - alert: LonghornVolumeDegraded
+          expr: longhorn_volume_robustness == 2
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Longhorn volume {{ $labels.volume }} is degraded"
+            description: "Volume replica redundancy is reduced; check node disks and rebuild status."
+        - alert: LonghornVolumeFaulted
+          expr: longhorn_volume_robustness == 3
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Longhorn volume {{ $labels.volume }} is faulted"
+            description: "All replicas are unavailable — data on this volume is currently inaccessible."

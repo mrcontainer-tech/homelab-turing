@@ -15,6 +15,7 @@ spec:
     metadata:
       labels:
         app: bazarr
+        app.kubernetes.io/name: bazarr
     spec:
       nodeSelector:
         kubernetes.io/hostname: node4
@@ -56,17 +57,18 @@ spec:
               port: 6767
             initialDelaySeconds: 15
             periodSeconds: 10
+          # Startup/liveness must not depend on bazarr's health endpoint, which
+          # checks sonarr/radarr connectivity; readiness keeps the HTTP check.
           startupProbe:
-            httpGet:
-              path: /api/system/health
+            tcpSocket:
               port: 6767
             failureThreshold: 30
             periodSeconds: 10
           livenessProbe:
-            httpGet:
-              path: /api/system/health
+            tcpSocket:
               port: 6767
             periodSeconds: 30
+            failureThreshold: 3
           resources:
             requests:
               cpu: 50m

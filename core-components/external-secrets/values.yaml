@@ -1,1 +1,7 @@
 # Use this file to override default values.yaml with custom values.yaml
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  additionalLabels:
+    # Must match the Prometheus serviceMonitorSelector (Helm release name).
+    release: kube-prometheus-stack

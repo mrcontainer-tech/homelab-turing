@@ -68,12 +68,14 @@ spec:
               port: http
             initialDelaySeconds: 15
             periodSeconds: 10
+          # Liveness must not depend on the database; readiness keeps the
+          # HTTP check to gate traffic.
           livenessProbe:
-            httpGet:
-              path: /api/app/about
+            tcpSocket:
               port: http
             initialDelaySeconds: 30
             periodSeconds: 30
+            failureThreshold: 3
       volumes:
         - name: data
           persistentVolumeClaim:

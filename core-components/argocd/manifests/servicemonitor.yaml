@@ -1,0 +1,24 @@
+# Scrapes the ArgoCD application controller (argocd-metrics) and API server
+# (argocd-server-metrics). Both services expose a port named "metrics".
+# The `release` label must match the Prometheus serviceMonitorSelector.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: argocd-metrics
+  namespace: argocd
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values:
+          - argocd-metrics
+          - argocd-server-metrics
+  namespaceSelector:
+    matchNames:
+      - argocd
+  endpoints:
+    - port: metrics
+      interval: 30s

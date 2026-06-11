@@ -7,8 +7,17 @@ metrics:
     enabled: true
     interval: 30s
     additionalLabels:
-      release: kube-prometheus-stack-chart
+      # Must match the Prometheus serviceMonitorSelector, which uses the
+      # kube-prometheus-stack Helm *release* name (not the ArgoCD app name).
+      release: kube-prometheus-stack
 
 persistence:
   defaultClassReplicaCount: 1
+
+defaultSettings:
+  # Bucket + IAM user + ASM secret must exist BEFORE this syncs — see the
+  # backup runbook in README.md. Secret is materialised by
+  # manifests/backup-external-secret.yaml.
+  backupTarget: s3://mrcontainer-homelab-backups@eu-west-1/longhorn
+  backupTargetCredentialSecret: longhorn-backup-secret
 

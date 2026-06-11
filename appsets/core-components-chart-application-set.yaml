@@ -48,6 +48,14 @@ spec:
             repoURL: https://cloudnative-pg.github.io/charts
             version: "0.28.0"
             releaseName: cloudnative-pg
+          # TODO: ArgoCD self-management. Keep commented until the cluster is
+          # healthy and you have read core-components/argocd/README.md
+          # (migration steps, version pinning, recovery path).
+          # - name: argocd
+          #   chart: argo-cd
+          #   repoURL: https://argoproj.github.io/argo-helm
+          #   version: "<chart version shipping the live v3.0.6 — see README>"
+          #   releaseName: argocd
   template:
     metadata:
       # e.g. name="cert-manager-chart"
@@ -76,21 +84,9 @@ spec:
           jqPathExpressions:
             - .spec.conversion
             - .spec.preserveUnknownFields
-        - group: apps
-          kind: Deployment
-          jqPathExpressions:
-            - .spec.template.spec.containers[].image
-            - .spec.template.spec.initContainers[]?.image
-        - group: apps
-          kind: StatefulSet
-          jqPathExpressions:
-            - .spec.template.spec.containers[].image
-            - .spec.template.spec.initContainers[]?.image
-        - group: apps
-          kind: DaemonSet
-          jqPathExpressions:
-            - .spec.template.spec.containers[].image
-            - .spec.template.spec.initContainers[]?.image
+        # Image ignoreDifferences removed: mutate-image-registry runs with
+        # autogen-controllers=none (and excludes all core-component
+        # namespaces anyway), so image drift detection works again.
       syncPolicy:
         automated:
           prune: true

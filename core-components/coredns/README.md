@@ -1,18 +1,34 @@
 # CoreDNS Custom Configuration
 
-This directory contains custom CoreDNS configuration for k3s.
+Overrides the k3s-bundled CoreDNS `Corefile` so cluster DNS forwards to
+[dnscrypt-proxy](../dnscrypt-proxy/) (encrypted upstream DNS) instead of
+`/etc/resolv.conf`, which Tailscale rewrites to `100.100.100.100` (MagicDNS)
+causing timeouts for external domains.
 
-## DNS Configuration
+## ⚠️ Namespace exception
 
-The custom ConfigMap overrides the default k3s CoreDNS forward directive to:
-- Use the local network router (192.168.68.1)
-- Fall back to Google DNS (8.8.8.8) and Cloudflare DNS (1.1.1.1)
-- Avoid Tailscale DNS (100.100.100.100) which causes timeouts in the cluster
+This component deploys into **`kube-system`** (where k3s runs CoreDNS), not
+into a `coredns` namespace. The ArgoCD Application's destination namespace
+(`coredns`) is therefore misleading; the manifest's explicit
+`namespace: kube-system` wins.
 
-## Why this is needed
+## ⚠️ Ownership conflict with k3s (known issue)
 
-When Tailscale is running on k3s nodes, it modifies `/etc/resolv.conf` to use `100.100.100.100` (Tailscale MagicDNS). By default, k3s CoreDNS uses `forward . /etc/resolv.conf`, which inherits this configuration and causes DNS timeouts for external domains.
+This ConfigMap **replaces an object the k3s addon controller also manages**
+(it carries `objectset.rio.cattle.io/*` annotations). k3s re-applies its
+bundled version on service restart/upgrade; ArgoCD self-heal then stomps it
+back. The failure mode is non-deterministic — see the June 2026 incident in
+`analysis-report.html`, where an invalid `forward` directive sat dormant for
+months and took down cluster DNS when the pod restarted.
 
-## How it works
+Rules for editing the Corefile here:
 
-K3s will automatically merge this custom ConfigMap with the base CoreDNS configuration.
+- The `forward` plugin accepts **only IP addresses** (or a resolv.conf path),
+  never DNS names — CoreDNS cannot resolve names before it is running.
+- Validate before committing: `docker run --rm -v $PWD:/cfg coredns/coredns
+  -conf /cfg/Corefile -dns.port 1053` or at minimum review against the
+  CoreDNS plugin docs.
+- Long-term fix (staged, not active): take full GitOps ownership of CoreDNS
+  (2 replicas, PDB, Service pinned to `10.43.0.10`) so there is exactly one
+  owner. The manifests and the ordered activation runbook live in
+  [takeover/](takeover/).

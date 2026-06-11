@@ -1,0 +1,16 @@
+# Nightly backup of every Longhorn volume to the S3 backup target.
+# The "default" group applies to all volumes that have no explicit
+# recurring-job groups of their own.
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: daily-backup
+  namespace: longhorn-system
+spec:
+  name: daily-backup
+  task: backup
+  cron: "0 2 * * *"
+  retain: 7
+  concurrency: 1
+  groups:
+    - default

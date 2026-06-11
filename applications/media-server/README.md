@@ -158,3 +158,15 @@ TLS secrets are provided per-app (`*-cert.yaml`). Traefik terminates TLS and for
 * Data PVs are hostPath-backed and pinned to `node4` for SSD I/O; config PVCs use the `longhorn` StorageClass.
 * Prefer pinning container image tags instead of `:latest`.
 * Back up config PVCs via Longhorn (snapshots/backups); media/downloads are outside Longhorn and should be backed up separately.
+
+## ⚠️ Namespace exception
+
+This directory is `media-server/` but everything deploys into the **`media`**
+namespace (the manifests' explicit `namespace: media` overrides the ArgoCD
+Application's destination). **Do not "fix" this by renaming the directory**:
+the generated Application (`media-server-manifest`) carries the
+`resources-finalizer.argocd.argoproj.io` finalizer, so a directory rename
+deletes the old Application *with cascade* — wiping every resource in the
+namespace, including the PVCs/PVs holding media and app configs. If the names
+should ever be aligned, plan it as a deliberate migration (remove the
+finalizer first, or back up and accept downtime).

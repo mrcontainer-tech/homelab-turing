@@ -4,7 +4,9 @@ metadata:
   name: pg-cluster
   namespace: mealie
 spec:
-  instances: 1
+  # Two instances: survive a node/volume failure with automatic failover.
+  # CNPG handles streaming replication; ~256Mi extra memory per cluster.
+  instances: 2
   storage:
     storageClass: longhorn
     size: 2Gi
@@ -18,3 +20,21 @@ spec:
     parameters:
       shared_buffers: "64MB"
       effective_cache_size: "128MB"
+  # Continuous WAL archiving + base backups to S3 (restore path for D17
+  # databases). backup-s3-creds is materialised by backup-external-secret.yaml.
+  # The S3 bucket and the homelab/backup-s3 ASM entry MUST exist before this
+  # syncs — see the backup runbook in core-components/longhorn-system/README.md.
+  # If archiving cannot reach S3, WAL segments accumulate on the 2Gi volume.
+  backup:
+    retentionPolicy: "14d"
+    barmanObjectStore:
+      destinationPath: s3://mrcontainer-homelab-backups/cnpg/mealie
+      s3Credentials:
+        accessKeyId:
+          name: backup-s3-creds
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: backup-s3-creds
+          key: ACCESS_SECRET_KEY
+      wal:
+        compression: gzip

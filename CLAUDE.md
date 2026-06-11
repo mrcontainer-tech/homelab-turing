@@ -44,6 +44,7 @@ homelab-turing/
 │   ├── core-components-chart-application-set.yaml     # List generator: remote Helm charts
 │   ├── core-components-manifest-application-set.yaml  # Git generator: raw YAML manifests
 │   ├── applications-chart-application-set.yaml        # List generator: remote Helm charts
+│   ├── applications-infrastructure-chart-application-set.yaml  # Platform-tier charts (KPS, zot) — see D25
 │   └── applications-manifest-application-set.yaml     # Git generator: raw YAML manifests
 ```
 
@@ -137,7 +138,9 @@ kubectl apply --dry-run=client -f core-components/<component>/manifests/
 
 - **Core components**: Some use `-system` suffix (e.g., `metallb-system`, `longhorn-system`), others use plain names (e.g., `tailscale`, `cloudnativepg`)
 - **Applications**: Use descriptive names (e.g., `media-server`, `kube-prometheus-stack`)
-- **Namespaces**: Match the component name
+- **Namespaces**: Match the component name, with three documented exceptions:
+  - `media-server/` deploys into namespace `media` (do **not** rename the directory — the Application's resources-finalizer would cascade-delete the namespace contents; see `applications/media-server/README.md`)
+  - `coredns/` and `dnscrypt-proxy/` deploy into `kube-system` (see their READMEs)
 
 ### Helm Charts (Multi-Source)
 

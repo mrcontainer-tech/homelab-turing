@@ -1,3 +1,23 @@
+# TODO(alerting): alerts currently fire only inside Alertmanager — no receiver
+# is configured, which is how a 7-day DNS outage went unnoticed. Pick a
+# notification channel and wire it up; credentials belong in AWS Secrets
+# Manager via an ExternalSecret, not here. Example for ntfy.sh (no secrets
+# needed for a public topic):
+#
+# alertmanager:
+#   config:
+#     route:
+#       receiver: ntfy
+#       routes:
+#         - receiver: ntfy
+#           matchers:
+#             - severity =~ "warning|critical"
+#     receivers:
+#       - name: ntfy
+#         webhook_configs:
+#           - url: https://ntfy.sh/<your-private-topic>
+#             send_resolved: true
+
 grafana:
   dashboardProviders:
     dashboardproviders.yaml:

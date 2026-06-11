@@ -14,6 +14,7 @@ spec:
     metadata:
       labels:
         app: qbittorrent
+        app.kubernetes.io/name: qbittorrent
     spec:
       nodeSelector:
         kubernetes.io/hostname: node4

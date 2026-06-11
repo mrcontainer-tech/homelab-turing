@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>homelab-turing — Deep Technical Analysis — 2026-06-10</title>
+<style>
+  :root {
+    --bg: #0d1117; --bg2: #161b22; --bg3: #1c2330;
+    --border: #30363d; --text: #e6edf3; --muted: #8b949e;
+    --red: #f85149; --orange: #d29922; --yellow: #e3b341;
+    --green: #3fb950; --blue: #58a6ff; --purple: #bc8cff;
+    --mono: "JetBrains Mono", "Fira Code", Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font: 15px/1.6 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 32px; }
+  h1 { font-size: 26px; font-weight: 700; }
+  h1 .sub { color: var(--muted); font-weight: 400; font-size: 15px; display: block; margin-top: 6px; }
+  h2 { font-size: 20px; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 16px; margin: 24px 0 8px; }
+  p { margin: 10px 0; }
+  a { color: var(--blue); }
+  code { font-family: var(--mono); font-size: 13px; background: var(--bg3); padding: 1px 6px; border-radius: 4px; }
+  pre { font-family: var(--mono); font-size: 13px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 12px 0; line-height: 1.5; }
+  pre code { background: none; padding: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+  th { text-align: left; color: var(--muted); font-weight: 600; padding: 8px 12px; border-bottom: 2px solid var(--border); }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 10px; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
+  .crit { background: rgba(248,81,73,.15); color: var(--red); border: 1px solid rgba(248,81,73,.4); }
+  .high { background: rgba(210,153,34,.15); color: var(--orange); border: 1px solid rgba(210,153,34,.4); }
+  .med  { background: rgba(227,179,65,.12); color: var(--yellow); border: 1px solid rgba(227,179,65,.35); }
+  .low  { background: rgba(88,166,255,.12); color: var(--blue); border: 1px solid rgba(88,166,255,.35); }
+  .ok   { background: rgba(63,185,80,.12); color: var(--green); border: 1px solid rgba(63,185,80,.35); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 20px 0; }
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .card .num { font-size: 28px; font-weight: 700; font-family: var(--mono); }
+  .card .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .card.bad .num { color: var(--red); }
+  .card.warn .num { color: var(--orange); }
+  .card.good .num { color: var(--green); }
+  .finding { background: var(--bg2); border: 1px solid var(--border); border-left: 4px solid var(--border); border-radius: 8px; padding: 18px 20px; margin: 14px 0; }
+  .finding.f-crit { border-left-color: var(--red); }
+  .finding.f-high { border-left-color: var(--orange); }
+  .finding.f-med  { border-left-color: var(--yellow); }
+  .finding.f-low  { border-left-color: var(--blue); }
+  .finding h3 { margin: 0 0 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .fix { background: rgba(63,185,80,.06); border: 1px solid rgba(63,185,80,.25); border-radius: 6px; padding: 10px 14px; margin-top: 12px; font-size: 14px; }
+  .fix strong { color: var(--green); }
+  .chain { font-family: var(--mono); font-size: 13.5px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; margin: 16px 0; }
+  .chain .step { padding: 4px 0; }
+  .chain .arrow { color: var(--muted); padding-left: 14px; }
+  .chain .r { color: var(--red); } .chain .o { color: var(--orange); } .chain .b { color: var(--blue); }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  ul, ol { margin: 8px 0 8px 24px; }
+  li { margin: 4px 0; }
+  .toc { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 24px; margin: 20px 0; }
+  .toc a { text-decoration: none; }
+  .pill-row td:first-child { white-space: nowrap; }
+  footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>homelab-turing — Deep Technical Analysis
+    <span class="sub">Turing Pi v2.5 · 4× RPi CM4 · k3s v1.32.5 · ArgoCD GitOps · Analyzed 2026-06-10 (repo @ <code>dd663c5</code>, last commit 2026-04-19)</span>
+  </h1>
+</header>
+
+<div class="cards">
+  <div class="card good"><div class="num">4/4</div><div class="lbl">Nodes Ready</div></div>
+  <div class="card bad"><div class="num">0/1</div><div class="lbl">CoreDNS available — cluster DNS DOWN ~7 days</div></div>
+  <div class="card bad"><div class="num">7</div><div class="lbl">Workloads down (deploy 0/N available)</div></div>
+  <div class="card bad"><div class="num">12/12</div><div class="lbl">ExternalSecrets failing to sync</div></div>
+  <div class="card bad"><div class="num">34/34</div><div class="lbl">ArgoCD apps with Unknown sync status</div></div>
+  <div class="card bad"><div class="num">0</div><div class="lbl">Longhorn backups configured</div></div>
+  <div class="card warn"><div class="num">385</div><div class="lbl">Kyverno audit-mode policy failures</div></div>
+  <div class="card warn"><div class="num">~42k</div><div class="lbl">Container restarts across crashlooping pods</div></div>
+</div>
+
+<div class="toc">
+  <strong>Contents</strong><br>
+  <a href="#summary">1. Executive Summary</a> ·
+  <a href="#cascade">2. The DNS Cascade (Root Cause)</a> ·
+  <a href="#critical">3. Critical Findings</a> ·
+  <a href="#high">4. High Findings</a> ·
+  <a href="#medium">5. Medium / Low Findings</a> ·
+  <a href="#good">6. What's Working Well</a> ·
+  <a href="#plan">7. Remediation Plan</a> ·
+  <a href="#method">8. Methodology</a>
+</div>
+
+<h2 id="summary">1. Executive Summary</h2>
+<p>
+The repository is in good shape: pinned chart versions, no <code>:latest</code> tags, resource requests on every
+deployment, secrets externalized to AWS Secrets Manager, ADRs, and a clean multi-source ApplicationSet pattern.
+The <strong>cluster, however, is in a severe degraded state</strong>, and has been for roughly 7 days:
+</p>
+<ul>
+  <li><strong>Cluster DNS is hard down.</strong> The single CoreDNS replica is in CrashLoopBackOff (1,749 restarts) because the Corefile checked into this repo is syntactically invalid for the <code>forward</code> plugin.</li>
+  <li>Everything downstream of DNS is failing: Longhorn CSI volume mounts, all three CloudNativePG clusters, linkding, mealie, miniflux, jellyseerr, bazarr, all 12 ExternalSecrets, and — critically — <strong>ArgoCD itself cannot fetch from GitHub or reach its own repo-server</strong>, so the GitOps self-heal loop is inside the blast radius and cannot fix anything.</li>
+  <li>The broken config sat dormant since <strong>2026-01-25</strong> (commit <code>35fa6a7</code>): CoreDNS's <code>reload</code> plugin rejects an invalid Corefile while running, so nothing failed until the pod restarted ~7 days ago and could no longer start. The monitoring stack did not surface this for a week — an alerting gap as significant as the bug itself.</li>
+  <li>Independent of DNS: the Tekton EventListener has been crashlooping for 43 days on missing RBAC (20,898 restarts), Longhorn's "S3 backup" documented in the README is <strong>not actually configured</strong> (BackupTarget URL empty, unavailable), one Longhorn volume is degraded, and a <code>conveyor-system</code> controller is running in the cluster with no trace in Git.</li>
+</ul>
+<p><strong>Bottom line:</strong> one invalid line in <code>core-components/coredns/manifests/coredns-custom.yaml</code> took down half the platform, and the recovery path requires manual intervention because GitOps cannot deploy its own fix while DNS is down. Fix order matters — see <a href="#plan">Remediation Plan</a>.</p>
+
+<h2 id="cascade">2. The DNS Cascade — Root Cause Analysis</h2>
+
+<div class="chain">
+  <div class="step b">core-components/coredns/manifests/coredns-custom.yaml:25</div>
+  <div class="step">&nbsp;&nbsp;<code>forward . dnscrypt-proxy.kube-system.svc.cluster.local</code> &nbsp;<span class="r">← invalid: forward accepts only IPs or a resolv.conf path</span></div>
+  <div class="arrow">↓ committed 2026-01-25 (35fa6a7) — dormant: the `reload` plugin refuses invalid configs while CoreDNS keeps running</div>
+  <div class="step o">~2026-06-03: CoreDNS pod restarts → fresh start parses Corefile → <span class="r">fatal: "plugin/forward: not an IP address or file"</span></div>
+  <div class="arrow">↓ CrashLoopBackOff (1,749 restarts) — and replicas: 1, so DNS has zero capacity</div>
+  <div class="step r">Cluster DNS (10.43.0.10:53) → connection refused, cluster-wide</div>
+  <div class="arrow">↓</div>
+  <div class="step">├─ <span class="o">Longhorn CSI</span>: cannot resolve <code>longhorn-backend</code> → volume mounts fail</div>
+  <div class="step">│&nbsp;&nbsp;&nbsp;└─ <span class="o">CNPG pg-cluster pods</span> stuck Init:0/1 in linkding (6d), miniflux (4d), mealie (20h)</div>
+  <div class="step">│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ <span class="r">linkding (9,962 restarts), miniflux (8,030), mealie</span> — no database</div>
+  <div class="step">├─ <span class="o">external-secrets</span>: cannot resolve AWS endpoints → all 12 ExternalSecrets SecretSyncedError</div>
+  <div class="step">├─ <span class="o">jellyseerr (1,985 restarts), bazarr (1,909)</span> — probes/external lookups failing since restart</div>
+  <div class="step">├─ <span class="o">cert-manager</span>: certs currently valid, but Route53 DNS-01 renewals will fail while DNS is down</div>
+  <div class="step">└─ <span class="r">ArgoCD repo-server unreachable + github.com unresolvable → all 34 apps "Unknown"</span></div>
+  <div class="step">&nbsp;&nbsp;&nbsp;&nbsp;<strong class="r">⇒ the GitOps control loop cannot deploy its own fix — manual intervention required</strong></div>
+</div>
+
+<p>Evidence (live cluster):</p>
+<pre><code># CoreDNS crash reason
+$ kubectl logs -n kube-system coredns-585d6d656b-g2ntw
+plugin/forward: not an IP address or file: "dnscrypt-proxy.kube-system.svc.cluster.local"
+
+# Longhorn mount failure (linkding pg-cluster-1)
+MountVolume.SetUp failed ... dial tcp: lookup longhorn-backend on 10.43.0.10:53:
+read udp 10.42.1.161:54349-&gt;10.43.0.10:53: read: connection refused
+
+# ArgoCD comparison error (every Application)
+Failed to load target state: ... dial tcp: lookup argocd-repo-server on 10.43.0.10:53: connection refused</code></pre>
+
+<p>
+A second, structural problem makes this worse: the repo overwrites the <code>coredns</code> ConfigMap that
+<strong>k3s itself manages</strong>. The live object carries both <code>argocd.argoproj.io/tracking-id</code> and
+<code>objectset.rio.cattle.io/owner-gvk: k3s.cattle.io/v1, Kind=Addon</code> — two controllers claiming ownership.
+Any k3s service restart/upgrade re-applies the bundled manifest, ArgoCD self-heal stomps it back. Even after fixing
+the syntax, this tug-of-war remains. (k3s's supported <code>coredns-custom</code> override ConfigMap doesn't exist
+in this cluster, and it can't cleanly replace the <code>forward</code> directive anyway, since the import lands inside
+the existing server block.)
+</p>
+
+<h2 id="critical">3. Critical Findings</h2>
+
+<div class="finding f-crit">
+  <h3><span class="badge crit">Critical</span> C1 — Invalid CoreDNS Corefile: cluster DNS down ~7 days</h3>
+  <p><code>core-components/coredns/manifests/coredns-custom.yaml:25</code> uses a DNS hostname in <code>forward</code>, which only accepts IPs or a resolv.conf path. Even if it were legal, it's a chicken-and-egg: CoreDNS would need DNS to resolve its own upstream.</p>
+  <div class="fix"><strong>Fix:</strong> Pin a static ClusterIP on the dnscrypt-proxy Service (it currently holds <code>10.43.24.76</code> — add <code>spec.clusterIP: 10.43.24.76</code> to <code>core-components/dnscrypt-proxy/manifests/02-service.yaml</code>) and change the Corefile to <code>forward . 10.43.24.76</code>. Consider <code>forward . 10.43.24.76 /etc/resolv.conf</code>-style fallback thinking: if dnscrypt-proxy is ever down, all external DNS dies again — dnscrypt-proxy is now a tier-0 dependency.
+  <br><strong>Recovery order matters:</strong> fix Git first, then manually patch the live ConfigMap and delete the CoreDNS pod (ArgoCD cannot pull the fix while DNS is down). Otherwise self-heal will keep re-breaking any manual fix.</div>
+</div>
+
+<div class="finding f-crit">
+  <h3><span class="badge crit">Critical</span> C2 — Fighting k3s over the coredns ConfigMap</h3>
+  <p>ArgoCD (selfHeal) and the k3s addon controller both own <code>kube-system/coredns</code>. k3s reverts the CM on restart/upgrade; ArgoCD stomps it back. This is why the bad config "worked" for four months and then detonated — the failure mode is non-deterministic by design.</p>
+  <div class="fix"><strong>Fix:</strong> Own CoreDNS properly: add <code>--disable coredns</code> (or <code>disable: [coredns]</code> in <code>/etc/rancher/k3s/config.yaml</code>) on the servers and deploy the full CoreDNS (Deployment + Service at <code>10.43.0.10</code> + ConfigMap, ≥2 replicas) from this repo. That makes Git the single source of truth, which is the project's stated philosophy. Until then, expect drift.</div>
+</div>
+
+<div class="finding f-crit">
+  <h3><span class="badge crit">Critical</span> C3 — GitOps control loop has no escape hatch</h3>
+  <p>ArgoCD's repo-server resolves <code>github.com</code> via cluster DNS. With CoreDNS down, the cluster cannot reconcile <em>any</em> change — including the one that fixes DNS. A 7-day outage with auto-sync + prune + selfHeal enabled on everything and no functioning reconciliation is the worst of both worlds.</p>
+  <div class="fix"><strong>Fix:</strong> Treat DNS as tier-0: run ≥2 CoreDNS replicas with a PodDisruptionBudget and pin pods to different nodes. Add a Prometheus alert on <code>coredns</code> availability and on ArgoCD app <code>Unknown</code>/<code>ComparisonError</code> conditions so a regression pages you within minutes, not weeks.</div>
+</div>
+
+<div class="finding f-crit">
+  <h3><span class="badge crit">Critical</span> C4 — No storage backups despite documented "S3 backup"</h3>
+  <p>The README/CLAUDE.md claim Longhorn has S3 backup, but the live BackupTarget has an <strong>empty URL and AVAILABLE=false</strong>, and no backup settings exist in <code>core-components/longhorn-system/values.yaml</code>. All three PostgreSQL clusters run <code>instances: 1</code> with single Longhorn volumes; one volume (<code>pvc-c3cc9891</code>, node4) is already <strong>degraded</strong> and one (<code>pvc-cc64ea92</code>, linkding's DB) is detached/unknown. A single disk failure currently means data loss for bookmarks, recipes, and RSS state.</p>
+  <div class="fix"><strong>Fix:</strong> Configure <code>defaultSettings.backupTarget</code> (+ credential secret via ExternalSecret) in the Longhorn values, add a RecurringJob for snapshots/backups, and consider CNPG's native <code>barmanObjectStore</code> backups for the databases. Verify the degraded volume rebuilds once DNS is restored.</div>
+</div>
+
+<h2 id="high">4. High Findings</h2>
+
+<div class="finding f-high">
+  <h3><span class="badge high">High</span> H1 — Tekton EventListener crashlooping 43 days: missing RBAC (20,898 restarts)</h3>
+  <p><code>applications/tekton-pipelines/manifests/01-rbac.yaml</code> grants the <code>tekton-ci</code> SA access to <code>eventlisteners</code>, <code>triggerbindings</code>, <code>triggertemplates</code> only. The EventListener pod also needs <code>triggers</code> and <code>interceptors</code> (namespaced) plus <code>clusterinterceptors</code> and <code>clustertriggerbindings</code> (cluster-scoped — a Role can't grant these). The CI webhook path has therefore never worked in its current form.</p>
+  <div class="fix"><strong>Fix:</strong> Bind the SA to the Tekton-shipped aggregated roles: RoleBinding → ClusterRole <code>tekton-triggers-eventlistener-roles</code>, plus ClusterRoleBinding → ClusterRole <code>tekton-triggers-eventlistener-clusterroles</code>. This is the upstream-documented pattern.</div>
+</div>
+
+<div class="finding f-high">
+  <h3><span class="badge high">High</span> H2 — Unmanaged workload: conveyor-system bypasses GitOps</h3>
+  <p>Namespace <code>conveyor-system</code> (labels: <code>managed-by: kustomize</code>, <code>kubectl.kubernetes.io/last-applied-configuration</code> present) runs <code>conveyor-controller-manager</code>, deployed 52 days ago via <code>kubectl apply</code>. It exists nowhere in this repository — violating the repo's own "Git is the single source of truth" rule. Meanwhile <code>applications/conveyor-tasks/</code> defines only a namespace + ExternalSecrets, and that namespace is currently empty (the ES syncs fail, see C1).</p>
+  <div class="fix"><strong>Fix:</strong> Vendor the conveyor controller manifests (or its kustomization) into <code>applications/</code> or <code>core-components/</code> so ArgoCD owns it, or document the exception in an ADR if it's intentionally experimental.</div>
+</div>
+
+<div class="finding f-high">
+  <h3><span class="badge high">High</span> H3 — Liveness probes coupled to external dependencies amplify outages</h3>
+  <p>linkding's liveness probe hits <code>/health</code>, which checks the database. DB down → kubelet kills the app → 9,962 restarts (and miniflux: 8,030; jellyseerr: 1,985; bazarr: 1,909). Restart storms burn CPU/IO on resource-constrained Pis and bury the actual signal. A liveness probe should answer "is this process wedged?", never "are my dependencies up?" — that's what readiness is for.</p>
+  <div class="fix"><strong>Fix:</strong> In <code>applications/linkding/manifests/deployment.yaml</code> (and peers), keep <code>/health</code> for <em>readiness</em> but switch <em>liveness</em> to a TCP socket check or a dependency-free endpoint. Add <code>failureThreshold</code>/longer periods to tolerate transient DB blips.</div>
+</div>
+
+<div class="finding f-high">
+  <h3><span class="badge high">High</span> H4 — Monitoring exists, alerting doesn't (effectively)</h3>
+  <p>kube-prometheus-stack is healthy, yet cluster DNS was down for ~7 days, every ExternalSecret has been failing, and a CI listener crashlooped for 43 days — unnoticed (last repo activity 2026-04-19). Dashboards without routed, actionable alerts are decorative.</p>
+  <div class="fix"><strong>Fix:</strong> Route Alertmanager to something you read (ntfy/Telegram/email via ExternalSecret-stored credentials). The defaults (<code>KubeDeploymentReplicasMismatch</code>, <code>KubePodCrashLooping</code>, <code>CoreDNSDown</code>) would have caught all of this — they likely fired into the void. Add custom alerts for ExternalSecret <code>SecretSyncedError</code> and ArgoCD sync/health conditions.</div>
+</div>
+
+<h2 id="medium">5. Medium / Low Findings</h2>
+
+<div class="finding f-med">
+  <h3><span class="badge med">Medium</span> M1 — Kyverno mutate policy: 9× copy-pasted exclude list, Audit-mode findings ignored</h3>
+  <p><code>applications/kyverno/manifests/mutate-image-registry.yaml</code> repeats an identical 19-namespace exclude block in all 9 rules (575 lines; ~80 needed). Adding a namespace means editing 9 places — guaranteed future drift. Separately, validation policies run in <code>Audit</code> mode with <strong>385 accumulated failures</strong> nobody triages — including the project's own workloads (e.g. jellyseerr fails the repo's own <code>require-labels</code> policy).</p>
+  <div class="fix"><strong>Fix:</strong> Label system namespaces (e.g. <code>homelab/image-rewrite: disabled</code>) and use a single <code>namespaceSelector</code> exclude, or YAML anchors per file. Triage the policy report: fix your own manifests' labels, then consider <code>Enforce</code> for new namespaces.</div>
+</div>
+
+<div class="finding f-med">
+  <h3><span class="badge med">Medium</span> M2 — ApplicationSets ignore image drift on every workload</h3>
+  <p>Both appsets set <code>ignoreDifferences</code> on <em>all</em> container/init-container images (Deployments, StatefulSets, DaemonSets). This is a workaround for the Kyverno registry-rewrite mutation (autogen rules mutate pod controllers → permanent diff), but it means ArgoCD is blind to <em>any</em> image change — including a compromised or manually-edited image. The drift-detection value of GitOps is partially disabled cluster-wide.</p>
+  <div class="fix"><strong>Fix options:</strong> (a) write <code>zot.mrcontainer.nl/...</code> images directly in Git for your own manifests so no mutation/ignore is needed there, narrowing <code>ignoreDifferences</code> to chart apps only; or (b) disable Kyverno autogen for the mutate policy (<code>pod-policies.kyverno.io/autogen-controllers: none</code>) so only Pods (unmanaged by ArgoCD) are rewritten, then drop <code>ignoreDifferences</code> entirely.</div>
+</div>
+
+<div class="finding f-med">
+  <h3><span class="badge med">Medium</span> M3 — ArgoCD itself is not GitOps-managed (known TODO, aging)</h3>
+  <p>ArgoCD was installed manually 347 days ago (raw manifests, <code>--insecure</code> flag); the repo only carries its cert/ingress. It's the one component whose version, config, and RBAC aren't reproducible from Git, and it's nearly a year old — multiple CVE-fixing releases behind.</p>
+  <div class="fix"><strong>Fix:</strong> Execute the documented TODO: argo-cd Helm chart in the core-components chart appset, values in Git (<code>server.insecure: true</code> stays, since TLS terminates at ingress). Document the bootstrap chicken-and-egg (ArgoCD managing itself) in an ADR.</div>
+</div>
+
+<div class="finding f-med">
+  <h3><span class="badge med">Medium</span> M4 — Namespace/destination mismatches in the manifest ApplicationSet</h3>
+  <p>The git-generator templates <code>destination.namespace: &lt;dir-name&gt;</code>, but several components deploy elsewhere: <code>media-server/</code> → namespace <code>media</code>, <code>coredns/</code> and <code>dnscrypt-proxy/</code> → <code>kube-system</code>. It works only because every manifest hardcodes its namespace, but it breaks the repo's stated "namespaces match the component name" convention and makes the Application's destination field misleading.</p>
+  <div class="fix"><strong>Fix:</strong> Rename <code>media-server/</code> → <code>media/</code> (or the namespace → <code>media-server</code>), and document kube-system-targeting components as exceptions in their READMEs.</div>
+</div>
+
+<div class="finding f-med">
+  <h3><span class="badge med">Medium</span> M5 — Single replicas everywhere on a 4-node cluster</h3>
+  <p>Every app Deployment and all CNPG clusters run 1 replica; CoreDNS too (which is what made C1 a total outage instead of a partial one). Node4 already sits at 75% memory. For most homelab apps single-replica is a fine trade-off — but not for tier-0 (DNS) or stateful data (PG without backups, see C4).</p>
+  <div class="fix"><strong>Fix:</strong> Prioritize: CoreDNS ≥2 (with anti-affinity), CNPG <code>instances: 2</code> for data you care about <em>or</em> backups (C4) — backups are cheaper on Pis. Leave stateless single-replica apps as-is.</div>
+</div>
+
+<div class="finding f-low">
+  <h3><span class="badge low">Low</span> L1 — Housekeeping</h3>
+  <ul>
+    <li><code>core-components/external-secrets/manifests/test-external-secret.yaml</code> — a "test-secret" smoke test left permanently deployed (and now permanently red, polluting status).</li>
+    <li>Tailscale <code>operator-oauth</code> ExternalSecret refreshes every <strong>1m</strong> (vs 1h elsewhere) — hammers AWS Secrets Manager API (cost/noise) for a credential that rarely changes.</li>
+    <li>Inconsistent manifest file naming: some components use numbered prefixes (<code>00-</code>, <code>01-</code>), most don't.</li>
+    <li>ADR D16 (Talos migration) appears stale — cluster still runs k3s on Debian 353 days in; mark it rejected/deferred.</li>
+    <li>jellyseerr deployment lacks the <code>app.kubernetes.io/name</code> label its own Kyverno policy requires.</li>
+  </ul>
+</div>
+
+<h2 id="good">6. What's Working Well</h2>
+<table>
+  <tr><th>Area</th><th>Observation</th></tr>
+  <tr class="pill-row"><td><span class="badge ok">Solid</span></td><td><strong>Version hygiene:</strong> every Helm chart pinned to an exact version; zero <code>:latest</code> tags; all images digest-stable tags.</td></tr>
+  <tr class="pill-row"><td><span class="badge ok">Solid</span></td><td><strong>Resource governance:</strong> every in-repo Deployment defines requests/limits — rare discipline, and essential on CM4s.</td></tr>
+  <tr class="pill-row"><td><span class="badge ok">Solid</span></td><td><strong>Secrets:</strong> no plaintext secrets in Git anywhere; consistent ExternalSecret + AWS Secrets Manager pattern (the "secret.yaml" files are ES definitions / SA tokens).</td></tr>
+  <tr class="pill-row"><td><span class="badge ok">Solid</span></td><td><strong>ApplicationSet architecture:</strong> the dual list-generator (remote charts + $values multi-source) / git-generator (manifests) split is clean, consistent, and self-documenting.</td></tr>
+  <tr class="pill-row"><td><span class="badge ok">Solid</span></td><td><strong>Supply chain:</strong> Zot pull-through cache with Kyverno rewrite is a genuinely advanced pattern (rate-limit immunity, Trivy scanning, ARM-friendly).</td></tr>
+  <tr class="pill-row"><td><span class="badge ok">Solid</span></td><td><strong>Documentation:</strong> ADRs, per-component READMEs, VISION.md — far above typical homelab standard.</td></tr>
+  <tr class="pill-row"><td><span class="badge ok">Solid</span></td><td><strong>Control plane:</strong> 3-node etcd HA, all nodes Ready at 353 days uptime; sensible dual public/Tailscale ingress pattern; NetworkPolicies present in sensitive namespaces.</td></tr>
+</table>
+
+<h2 id="plan">7. Remediation Plan (ordered)</h2>
+<table>
+  <tr><th>#</th><th>Action</th><th>Finding</th><th>Effort</th></tr>
+  <tr><td>1</td><td><strong>Commit the Corefile fix to Git first</strong> (forward → static ClusterIP <code>10.43.24.76</code>; pin that clusterIP in the dnscrypt-proxy Service). Then <em>manually</em> apply the same ConfigMap and delete the CoreDNS pod — ArgoCD cannot pull the fix while DNS is down. Verify: <code>kubectl run dnstest --rm -it --image=busybox -- nslookup github.com</code>.</td><td>C1, C3</td><td>30 min</td></tr>
+  <tr><td>2</td><td>Watch the cascade self-heal: pg-clusters mount → apps recover → ExternalSecrets sync → ArgoCD statuses return. Manually verify the degraded/detached Longhorn volumes rebuild.</td><td>C1, C4</td><td>1 h</td></tr>
+  <tr><td>3</td><td>Fix Tekton RBAC (bind <code>tekton-ci</code> to <code>tekton-triggers-eventlistener-roles</code> + <code>-clusterroles</code>).</td><td>H1</td><td>30 min</td></tr>
+  <tr><td>4</td><td>Configure Longhorn backup target + RecurringJob; add CNPG <code>barmanObjectStore</code> backups.</td><td>C4</td><td>2–3 h</td></tr>
+  <tr><td>5</td><td>Route Alertmanager somewhere you'll see it; alert on CoreDNS, ExternalSecret sync, ArgoCD health.</td><td>H4</td><td>2 h</td></tr>
+  <tr><td>6</td><td>Take real ownership of CoreDNS: disable the k3s bundled addon, deploy CoreDNS (≥2 replicas, PDB, anti-affinity) from this repo.</td><td>C2, C3, M5</td><td>half day</td></tr>
+  <tr><td>7</td><td>Decouple liveness probes from DB health (linkding, miniflux, mealie, jellyseerr, bazarr).</td><td>H3</td><td>1 h</td></tr>
+  <tr><td>8</td><td>Bring conveyor-system into Git or ADR the exception.</td><td>H2</td><td>1–2 h</td></tr>
+  <tr><td>9</td><td>Refactor Kyverno policy (namespaceSelector), triage 385 audit failures, fix own label violations.</td><td>M1</td><td>2 h</td></tr>
+  <tr><td>10</td><td>ArgoCD via Helm chart (existing TODO); upgrade off the 347-day-old install.</td><td>M3</td><td>half day</td></tr>
+  <tr><td>11</td><td>Narrow/remove image <code>ignoreDifferences</code>; housekeeping (test-secret, 1m refresh, namespace naming, ADR D16).</td><td>M2, M4, L1</td><td>2 h</td></tr>
+</table>
+
+<h2 id="method">8. Methodology</h2>
+<p class="small muted">
+Static analysis of all 180+ YAML/Markdown files in the repository (appsets, manifests, values, ADRs) combined with
+read-only live-cluster inspection: node/pod/deployment status, ArgoCD Application conditions, CoreDNS logs (current +
+previous), pod events, CNPG cluster status, Longhorn volume robustness and BackupTarget, ExternalSecret status,
+Kyverno PolicyReports, ConfigMap ownership annotations, and git history correlation. No mutating kubectl commands were
+executed; no changes were made to the cluster. Restart counts and ages are as observed at 2026-06-10 ~21:30 CEST.
+</p>
+
+<footer>
+  Generated by Claude Code · 2026-06-10 · homelab-turing @ dd663c5 · k3s v1.32.5+k3s1 · This file is static HTML with no external dependencies.
+</footer>
+
+</div>
+</body>
+</html>

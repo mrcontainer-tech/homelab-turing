@@ -14,6 +14,7 @@ spec:
     metadata:
       labels:
         app: prowlarr
+        app.kubernetes.io/name: prowlarr
     spec:
       nodeSelector:
         kubernetes.io/hostname: node4

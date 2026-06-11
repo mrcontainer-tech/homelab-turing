@@ -16,11 +16,11 @@ spec:
         elements:
           # Infrastructure-tier charts (kube-prometheus-stack, zot) live in
           # the sibling appsets/applications-infrastructure-chart-application-set.yaml
-          # — their namespaces are excluded from the Kyverno image-mutation
-          # policy, so the ignoreDifferences block below has no fill-in and
-          # leaves their workloads stuck OutOfSync (or, for newly-rendered
-          # initContainers, fails to apply with "image: Required value").
-          # See adr/D25-applications-infrastructure-appset.md.
+          # (adr/D25-applications-infrastructure-appset.md). The image-stripping
+          # ignoreDifferences block D25 worked around is gone entirely: the
+          # Kyverno mutate-image-registry policy now runs with
+          # autogen-controllers=none, so workload controllers stay identical to
+          # Git in every namespace and ArgoCD keeps image drift detection.
           - name: kyverno
             chart: kyverno
             repoURL: https://kyverno.github.io/kyverno/
@@ -53,22 +53,10 @@ spec:
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{ .name }}'
-      ignoreDifferences:
-        - group: apps
-          kind: Deployment
-          jqPathExpressions:
-            - .spec.template.spec.containers[].image
-            - .spec.template.spec.initContainers[]?.image
-        - group: apps
-          kind: StatefulSet
-          jqPathExpressions:
-            - .spec.template.spec.containers[].image
-            - .spec.template.spec.initContainers[]?.image
-        - group: apps
-          kind: DaemonSet
-          jqPathExpressions:
-            - .spec.template.spec.containers[].image
-            - .spec.template.spec.initContainers[]?.image
+      # Image ignoreDifferences removed: the Kyverno mutate-image-registry
+      # policy now runs with autogen-controllers=none, so only Pods (not
+      # workload controllers) are rewritten and ArgoCD keeps image drift
+      # detection.
       syncPolicy:
         automated:
           prune: true

@@ -33,6 +33,14 @@ spec:
         server: https://kubernetes.default.svc
         namespace: '{{ base (dir .path.path) }}'
       ignoreDifferences:
+        # k3s patches the NodeHosts key of the coredns ConfigMap at runtime
+        # when nodes join/leave; don't let self-heal fight it. Scoped to the
+        # single object on purpose.
+        - kind: ConfigMap
+          name: coredns
+          namespace: kube-system
+          jsonPointers:
+            - /data/NodeHosts
         - group: external-secrets.io
           kind: ExternalSecret
           jqPathExpressions:
@@ -45,16 +53,9 @@ spec:
           jqPathExpressions:
             - .spec.conversion
             - .spec.preserveUnknownFields
-        - group: apps
-          kind: Deployment
-          jqPathExpressions:
-            - .spec.template.spec.containers[].image
-            - .spec.template.spec.initContainers[]?.image
-        - group: apps
-          kind: StatefulSet
-          jqPathExpressions:
-            - .spec.template.spec.containers[].image
-            - .spec.template.spec.initContainers[]?.image
+        # Image ignoreDifferences removed: mutate-image-registry runs with
+        # autogen-controllers=none (and excludes all core-component
+        # namespaces anyway), so image drift detection works again.
       syncPolicy:
         automated:
           prune: true

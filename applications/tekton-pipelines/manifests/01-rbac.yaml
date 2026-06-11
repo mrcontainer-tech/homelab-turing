@@ -6,28 +6,34 @@ metadata:
 secrets:
   - name: github-deploy-key
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: tekton-ci-triggers
-  namespace: tekton-pipelines
-rules:
-  - apiGroups: ["triggers.tekton.dev"]
-    resources: ["eventlisteners", "triggerbindings", "triggertemplates"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["tekton.dev"]
-    resources: ["pipelineruns"]
-    verbs: ["create", "get", "list"]
----
+# The EventListener pod needs the upstream aggregated roles shipped by the
+# Tekton operator. A hand-rolled Role is insufficient: the listener watches
+# triggers and interceptors (namespaced) plus clusterinterceptors and
+# clustertriggerbindings, which are cluster-scoped and cannot be granted
+# by a namespaced Role at all.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: tekton-ci-triggers
+  name: tekton-ci-eventlistener-roles
   namespace: tekton-pipelines
 subjects:
   - kind: ServiceAccount
     name: tekton-ci
+    namespace: tekton-pipelines
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: tekton-ci-triggers
+  kind: ClusterRole
+  name: tekton-triggers-eventlistener-roles
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tekton-ci-eventlistener-clusterroles
+subjects:
+  - kind: ServiceAccount
+    name: tekton-ci
+    namespace: tekton-pipelines
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-triggers-eventlistener-clusterroles

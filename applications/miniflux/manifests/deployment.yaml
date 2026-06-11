@@ -52,9 +52,11 @@ spec:
               port: http
             initialDelaySeconds: 10
             periodSeconds: 10
+          # Liveness must not depend on the database; readiness keeps the
+          # HTTP healthcheck to gate traffic.
           livenessProbe:
-            httpGet:
-              path: /healthcheck
+            tcpSocket:
               port: http
             initialDelaySeconds: 15
             periodSeconds: 30
+            failureThreshold: 3

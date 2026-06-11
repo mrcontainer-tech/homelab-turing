@@ -20,6 +20,18 @@ Pod → CoreDNS → dnscrypt-proxy → Multiple DoH/DoT providers
 - **High availability**: 2 replicas spread across nodes
 - **Resource efficient**: Optimized for Raspberry Pi constraints
 
+## ⚠️ Namespace exception
+
+This component deploys into **`kube-system`** (alongside CoreDNS, which
+forwards to it), not into a `dnscrypt-proxy` namespace. The ArgoCD
+Application's destination namespace is therefore misleading; the manifests'
+explicit `namespace: kube-system` wins.
+
+Because CoreDNS's `forward` plugin only accepts IP addresses, the Service
+must keep a **stable ClusterIP** — the CoreDNS Corefile references it by IP.
+Do not delete/recreate the Service without updating the Corefile in
+[../coredns/](../coredns/).
+
 ## Configuration
 
 The proxy is configured via `00-configmap.yaml` with the following key settings:

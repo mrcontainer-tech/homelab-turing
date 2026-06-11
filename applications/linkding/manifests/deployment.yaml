@@ -63,9 +63,12 @@ spec:
               port: http
             initialDelaySeconds: 10
             periodSeconds: 10
+          # Liveness must not depend on the database: /health checks the DB,
+          # so a DB outage would restart-loop a perfectly healthy process.
+          # Readiness keeps the HTTP check to gate traffic.
           livenessProbe:
-            httpGet:
-              path: /health
+            tcpSocket:
               port: http
             initialDelaySeconds: 15
             periodSeconds: 30
+            failureThreshold: 3

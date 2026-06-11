@@ -1,0 +1,118 @@
+# Mirrors the k3s-bundled CoreDNS deployment (same name → in-place adoption),
+# with the changes that motivated the takeover:
+#   - replicas: 2 (DNS is tier-0; a single replica turned one bad restart
+#     into a week-long, cluster-wide outage — see analysis-report.html)
+#   - topologySpreadConstraints keep the replicas on different nodes
+# Image stays rancher/mirrored-coredns-coredns: it is already present on
+# every node, so CoreDNS can start even when DNS/registry access is down.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coredns
+  namespace: kube-system
+  labels:
+    k8s-app: kube-dns
+    kubernetes.io/name: CoreDNS
+spec:
+  replicas: 2
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      k8s-app: kube-dns
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        k8s-app: kube-dns
+    spec:
+      serviceAccountName: coredns
+      priorityClassName: system-cluster-critical
+      dnsPolicy: Default
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - key: CriticalAddonsOnly
+          operator: Exists
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      containers:
+        - name: coredns
+          image: rancher/mirrored-coredns-coredns:1.12.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - -conf
+            - /etc/coredns/Corefile
+          ports:
+            - name: dns
+              containerPort: 53
+              protocol: UDP
+            - name: dns-tcp
+              containerPort: 53
+              protocol: TCP
+            - name: metrics
+              containerPort: 9153
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8181
+            periodSeconds: 2
+            timeoutSeconds: 1
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 70Mi
+            limits:
+              memory: 170Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              add:
+                - NET_BIND_SERVICE
+              drop:
+                - all
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/coredns
+              readOnly: true
+            - name: custom-config-volume
+              mountPath: /etc/coredns/custom
+              readOnly: true
+      volumes:
+        - name: config-volume
+          configMap:
+            name: coredns
+            items:
+              - key: Corefile
+                path: Corefile
+              - key: NodeHosts
+                path: NodeHosts
+        - name: custom-config-volume
+          configMap:
+            name: coredns-custom
+            optional: true

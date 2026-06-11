@@ -11,6 +11,10 @@ metadata:
       registry (zot.mrcontainer.nl) for caching and Trivy vulnerability scanning.
       Images are routed to the correct upstream prefix based on their source registry.
       System namespaces are excluded to avoid breaking core infrastructure.
+    # Mutate Pods only, not their controllers. Workload manifests (Deployments
+    # etc.) stay byte-identical to Git, so ArgoCD keeps full image drift
+    # detection and the appsets need no ignoreDifferences for images.
+    pod-policies.kyverno.io/autogen-controllers: "none"
 spec:
   admission: true
   background: true
@@ -18,13 +22,15 @@ spec:
   validationFailureAction: Audit
   rules:
     # Docker Hub implicit - official library images (no domain, no slash, e.g. nginx:latest)
+    # The match/exclude/preconditions blocks are YAML-anchored here and reused
+    # by every rule below — edit them in one place only.
     - name: rewrite-dockerhub-library
-      match:
+      match: &match-pods
         any:
           - resources:
               kinds:
                 - Pod
-      exclude:
+      exclude: &exclude-system-namespaces
         any:
           - resources:
               namespaces:
@@ -47,7 +53,7 @@ spec:
                 - tekton-operator
                 - tekton-pipelines
                 - zot
-      preconditions:
+      preconditions: &on-create-update
         all:
           - key: "{{request.operation}}"
             operator: In
@@ -55,7 +61,7 @@ spec:
       mutate:
         foreach:
           - list: "request.object.spec.containers[]"
-            preconditions:
+            preconditions: &pre-dockerhub-library
               all:
                 - key: "{{element.image}}"
                   operator: NotEquals
@@ -72,17 +78,7 @@ spec:
                   - (name): "{{element.name}}"
                     image: "zot.mrcontainer.nl/dockerhub/library/{{element.image}}"
           - list: "request.object.spec.initContainers[] || []"
-            preconditions:
-              all:
-                - key: "{{element.image}}"
-                  operator: NotEquals
-                  value: "zot.mrcontainer.nl/*"
-                - key: "{{element.image}}"
-                  operator: NotEquals
-                  value: "*.*/*"
-                - key: "{{element.image}}"
-                  operator: NotEquals
-                  value: "*/*"
+            preconditions: *pre-dockerhub-library
             patchStrategicMerge:
               spec:
                 initContainers:
@@ -90,43 +86,13 @@ spec:
                     image: "zot.mrcontainer.nl/dockerhub/library/{{element.image}}"
     # Docker Hub implicit - namespaced images (no domain, has slash, e.g. miniflux/miniflux:2.2.6)
     - name: rewrite-dockerhub-namespaced
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      exclude:
-        any:
-          - resources:
-              namespaces:
-                - kube-system
-                - kube-public
-                - kube-node-lease
-                - argocd
-                - cert-manager
-                - cloudnativepg
-                - coredns
-                - dnscrypt-proxy
-                - external-dns
-                - external-secrets
-                - kube-prometheus-stack
-                - kyverno
-                - longhorn-system
-                - metallb-system
-                - policy-reporter
-                - tailscale
-                - tekton-operator
-                - tekton-pipelines
-                - zot
-      preconditions:
-        all:
-          - key: "{{request.operation}}"
-            operator: In
-            value: ["CREATE", "UPDATE"]
+      match: *match-pods
+      exclude: *exclude-system-namespaces
+      preconditions: *on-create-update
       mutate:
         foreach:
           - list: "request.object.spec.containers[]"
-            preconditions:
+            preconditions: &pre-dockerhub-namespaced
               all:
                 - key: "{{element.image}}"
                   operator: NotEquals
@@ -143,17 +109,7 @@ spec:
                   - (name): "{{element.name}}"
                     image: "zot.mrcontainer.nl/dockerhub/{{element.image}}"
           - list: "request.object.spec.initContainers[] || []"
-            preconditions:
-              all:
-                - key: "{{element.image}}"
-                  operator: NotEquals
-                  value: "zot.mrcontainer.nl/*"
-                - key: "{{element.image}}"
-                  operator: NotEquals
-                  value: "*.*/*"
-                - key: "{{element.image}}"
-                  operator: Equals
-                  value: "*/*"
+            preconditions: *pre-dockerhub-namespaced
             patchStrategicMerge:
               spec:
                 initContainers:
@@ -161,43 +117,13 @@ spec:
                     image: "zot.mrcontainer.nl/dockerhub/{{element.image}}"
     # Docker Hub explicit (docker.io/...)
     - name: rewrite-dockerhub-explicit
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      exclude:
-        any:
-          - resources:
-              namespaces:
-                - kube-system
-                - kube-public
-                - kube-node-lease
-                - argocd
-                - cert-manager
-                - cloudnativepg
-                - coredns
-                - dnscrypt-proxy
-                - external-dns
-                - external-secrets
-                - kube-prometheus-stack
-                - kyverno
-                - longhorn-system
-                - metallb-system
-                - policy-reporter
-                - tailscale
-                - tekton-operator
-                - tekton-pipelines
-                - zot
-      preconditions:
-        all:
-          - key: "{{request.operation}}"
-            operator: In
-            value: ["CREATE", "UPDATE"]
+      match: *match-pods
+      exclude: *exclude-system-namespaces
+      preconditions: *on-create-update
       mutate:
         foreach:
           - list: "request.object.spec.containers[]"
-            preconditions:
+            preconditions: &pre-dockerhub-explicit
               all:
                 - key: "{{element.image}}"
                   operator: Equals
@@ -208,11 +134,7 @@ spec:
                   - (name): "{{element.name}}"
                     image: "{{ regex_replace_all('^docker\\.io/', element.image, 'zot.mrcontainer.nl/dockerhub/') }}"
           - list: "request.object.spec.initContainers[] || []"
-            preconditions:
-              all:
-                - key: "{{element.image}}"
-                  operator: Equals
-                  value: "docker.io/*"
+            preconditions: *pre-dockerhub-explicit
             patchStrategicMerge:
               spec:
                 initContainers:
@@ -220,43 +142,13 @@ spec:
                     image: "{{ regex_replace_all('^docker\\.io/', element.image, 'zot.mrcontainer.nl/dockerhub/') }}"
     # GHCR (ghcr.io)
     - name: rewrite-ghcr
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      exclude:
-        any:
-          - resources:
-              namespaces:
-                - kube-system
-                - kube-public
-                - kube-node-lease
-                - argocd
-                - cert-manager
-                - cloudnativepg
-                - coredns
-                - dnscrypt-proxy
-                - external-dns
-                - external-secrets
-                - kube-prometheus-stack
-                - kyverno
-                - longhorn-system
-                - metallb-system
-                - policy-reporter
-                - tailscale
-                - tekton-operator
-                - tekton-pipelines
-                - zot
-      preconditions:
-        all:
-          - key: "{{request.operation}}"
-            operator: In
-            value: ["CREATE", "UPDATE"]
+      match: *match-pods
+      exclude: *exclude-system-namespaces
+      preconditions: *on-create-update
       mutate:
         foreach:
           - list: "request.object.spec.containers[]"
-            preconditions:
+            preconditions: &pre-ghcr
               all:
                 - key: "{{element.image}}"
                   operator: Equals
@@ -267,11 +159,7 @@ spec:
                   - (name): "{{element.name}}"
                     image: "{{ regex_replace_all('^ghcr\\.io/', element.image, 'zot.mrcontainer.nl/ghcr/') }}"
           - list: "request.object.spec.initContainers[] || []"
-            preconditions:
-              all:
-                - key: "{{element.image}}"
-                  operator: Equals
-                  value: "ghcr.io/*"
+            preconditions: *pre-ghcr
             patchStrategicMerge:
               spec:
                 initContainers:
@@ -279,43 +167,13 @@ spec:
                     image: "{{ regex_replace_all('^ghcr\\.io/', element.image, 'zot.mrcontainer.nl/ghcr/') }}"
     # Quay (quay.io)
     - name: rewrite-quay
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      exclude:
-        any:
-          - resources:
-              namespaces:
-                - kube-system
-                - kube-public
-                - kube-node-lease
-                - argocd
-                - cert-manager
-                - cloudnativepg
-                - coredns
-                - dnscrypt-proxy
-                - external-dns
-                - external-secrets
-                - kube-prometheus-stack
-                - kyverno
-                - longhorn-system
-                - metallb-system
-                - policy-reporter
-                - tailscale
-                - tekton-operator
-                - tekton-pipelines
-                - zot
-      preconditions:
-        all:
-          - key: "{{request.operation}}"
-            operator: In
-            value: ["CREATE", "UPDATE"]
+      match: *match-pods
+      exclude: *exclude-system-namespaces
+      preconditions: *on-create-update
       mutate:
         foreach:
           - list: "request.object.spec.containers[]"
-            preconditions:
+            preconditions: &pre-quay
               all:
                 - key: "{{element.image}}"
                   operator: Equals
@@ -326,11 +184,7 @@ spec:
                   - (name): "{{element.name}}"
                     image: "{{ regex_replace_all('^quay\\.io/', element.image, 'zot.mrcontainer.nl/quay/') }}"
           - list: "request.object.spec.initContainers[] || []"
-            preconditions:
-              all:
-                - key: "{{element.image}}"
-                  operator: Equals
-                  value: "quay.io/*"
+            preconditions: *pre-quay
             patchStrategicMerge:
               spec:
                 initContainers:
@@ -338,43 +192,13 @@ spec:
                     image: "{{ regex_replace_all('^quay\\.io/', element.image, 'zot.mrcontainer.nl/quay/') }}"
     # LSCR (lscr.io)
     - name: rewrite-lscr
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      exclude:
-        any:
-          - resources:
-              namespaces:
-                - kube-system
-                - kube-public
-                - kube-node-lease
-                - argocd
-                - cert-manager
-                - cloudnativepg
-                - coredns
-                - dnscrypt-proxy
-                - external-dns
-                - external-secrets
-                - kube-prometheus-stack
-                - kyverno
-                - longhorn-system
-                - metallb-system
-                - policy-reporter
-                - tailscale
-                - tekton-operator
-                - tekton-pipelines
-                - zot
-      preconditions:
-        all:
-          - key: "{{request.operation}}"
-            operator: In
-            value: ["CREATE", "UPDATE"]
+      match: *match-pods
+      exclude: *exclude-system-namespaces
+      preconditions: *on-create-update
       mutate:
         foreach:
           - list: "request.object.spec.containers[]"
-            preconditions:
+            preconditions: &pre-lscr
               all:
                 - key: "{{element.image}}"
                   operator: Equals
@@ -385,11 +209,7 @@ spec:
                   - (name): "{{element.name}}"
                     image: "{{ regex_replace_all('^lscr\\.io/', element.image, 'zot.mrcontainer.nl/lscr/') }}"
           - list: "request.object.spec.initContainers[] || []"
-            preconditions:
-              all:
-                - key: "{{element.image}}"
-                  operator: Equals
-                  value: "lscr.io/*"
+            preconditions: *pre-lscr
             patchStrategicMerge:
               spec:
                 initContainers:
@@ -397,43 +217,13 @@ spec:
                     image: "{{ regex_replace_all('^lscr\\.io/', element.image, 'zot.mrcontainer.nl/lscr/') }}"
     # Kubernetes registry (registry.k8s.io)
     - name: rewrite-k8s
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      exclude:
-        any:
-          - resources:
-              namespaces:
-                - kube-system
-                - kube-public
-                - kube-node-lease
-                - argocd
-                - cert-manager
-                - cloudnativepg
-                - coredns
-                - dnscrypt-proxy
-                - external-dns
-                - external-secrets
-                - kube-prometheus-stack
-                - kyverno
-                - longhorn-system
-                - metallb-system
-                - policy-reporter
-                - tailscale
-                - tekton-operator
-                - tekton-pipelines
-                - zot
-      preconditions:
-        all:
-          - key: "{{request.operation}}"
-            operator: In
-            value: ["CREATE", "UPDATE"]
+      match: *match-pods
+      exclude: *exclude-system-namespaces
+      preconditions: *on-create-update
       mutate:
         foreach:
           - list: "request.object.spec.containers[]"
-            preconditions:
+            preconditions: &pre-k8s
               all:
                 - key: "{{element.image}}"
                   operator: Equals
@@ -444,11 +234,7 @@ spec:
                   - (name): "{{element.name}}"
                     image: "{{ regex_replace_all('^registry\\.k8s\\.io/', element.image, 'zot.mrcontainer.nl/k8s/') }}"
           - list: "request.object.spec.initContainers[] || []"
-            preconditions:
-              all:
-                - key: "{{element.image}}"
-                  operator: Equals
-                  value: "registry.k8s.io/*"
+            preconditions: *pre-k8s
             patchStrategicMerge:
               spec:
                 initContainers:
@@ -456,43 +242,13 @@ spec:
                     image: "{{ regex_replace_all('^registry\\.k8s\\.io/', element.image, 'zot.mrcontainer.nl/k8s/') }}"
     # GCR (gcr.io)
     - name: rewrite-gcr
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      exclude:
-        any:
-          - resources:
-              namespaces:
-                - kube-system
-                - kube-public
-                - kube-node-lease
-                - argocd
-                - cert-manager
-                - cloudnativepg
-                - coredns
-                - dnscrypt-proxy
-                - external-dns
-                - external-secrets
-                - kube-prometheus-stack
-                - kyverno
-                - longhorn-system
-                - metallb-system
-                - policy-reporter
-                - tailscale
-                - tekton-operator
-                - tekton-pipelines
-                - zot
-      preconditions:
-        all:
-          - key: "{{request.operation}}"
-            operator: In
-            value: ["CREATE", "UPDATE"]
+      match: *match-pods
+      exclude: *exclude-system-namespaces
+      preconditions: *on-create-update
       mutate:
         foreach:
           - list: "request.object.spec.containers[]"
-            preconditions:
+            preconditions: &pre-gcr
               all:
                 - key: "{{element.image}}"
                   operator: Equals
@@ -503,11 +259,7 @@ spec:
                   - (name): "{{element.name}}"
                     image: "{{ regex_replace_all('^gcr\\.io/', element.image, 'zot.mrcontainer.nl/gcr/') }}"
           - list: "request.object.spec.initContainers[] || []"
-            preconditions:
-              all:
-                - key: "{{element.image}}"
-                  operator: Equals
-                  value: "gcr.io/*"
+            preconditions: *pre-gcr
             patchStrategicMerge:
               spec:
                 initContainers:
@@ -515,43 +267,13 @@ spec:
                     image: "{{ regex_replace_all('^gcr\\.io/', element.image, 'zot.mrcontainer.nl/gcr/') }}"
     # NVCR (nvcr.io)
     - name: rewrite-nvcr
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      exclude:
-        any:
-          - resources:
-              namespaces:
-                - kube-system
-                - kube-public
-                - kube-node-lease
-                - argocd
-                - cert-manager
-                - cloudnativepg
-                - coredns
-                - dnscrypt-proxy
-                - external-dns
-                - external-secrets
-                - kube-prometheus-stack
-                - kyverno
-                - longhorn-system
-                - metallb-system
-                - policy-reporter
-                - tailscale
-                - tekton-operator
-                - tekton-pipelines
-                - zot
-      preconditions:
-        all:
-          - key: "{{request.operation}}"
-            operator: In
-            value: ["CREATE", "UPDATE"]
+      match: *match-pods
+      exclude: *exclude-system-namespaces
+      preconditions: *on-create-update
       mutate:
         foreach:
           - list: "request.object.spec.containers[]"
-            preconditions:
+            preconditions: &pre-nvcr
               all:
                 - key: "{{element.image}}"
                   operator: Equals
@@ -562,11 +284,7 @@ spec:
                   - (name): "{{element.name}}"
                     image: "{{ regex_replace_all('^nvcr\\.io/', element.image, 'zot.mrcontainer.nl/nvcr/') }}"
           - list: "request.object.spec.initContainers[] || []"
-            preconditions:
-              all:
-                - key: "{{element.image}}"
-                  operator: Equals
-                  value: "nvcr.io/*"
+            preconditions: *pre-nvcr
             patchStrategicMerge:
               spec:
                 initContainers:

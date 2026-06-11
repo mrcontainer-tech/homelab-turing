@@ -1,0 +1,12 @@
+# Nightly base backup (CNPG cron has a leading seconds field). Staggered
+# across the three app databases to avoid concurrent load on the Pis.
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: pg-cluster-daily
+  namespace: mealie
+spec:
+  schedule: "0 15 3 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: pg-cluster

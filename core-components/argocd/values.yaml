@@ -1,0 +1,28 @@
+# Helm values for the argo-cd chart (https://argoproj.github.io/argo-helm).
+# NOT ACTIVE YET — the chart entry in appsets/core-components-chart-application-set.yaml
+# is commented out. Read README.md in this directory before enabling.
+global:
+  domain: argocd.mrcontainer.nl
+
+configs:
+  params:
+    # TLS terminates at the ingress (cert-manager); the server stays HTTP.
+    # This replaces the --insecure flag of the manual install.
+    server.insecure: true
+
+# Single-replica everything (matches the current install; HA needs >3 nodes
+# of headroom this cluster doesn't have).
+redis-ha:
+  enabled: false
+
+controller:
+  replicas: 1
+
+server:
+  replicas: 1
+
+repoServer:
+  replicas: 1
+
+applicationSet:
+  replicas: 1
