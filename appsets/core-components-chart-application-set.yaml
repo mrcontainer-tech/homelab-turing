@@ -48,14 +48,15 @@ spec:
             repoURL: https://cloudnative-pg.github.io/charts
             version: "0.28.0"
             releaseName: cloudnative-pg
-          # TODO: ArgoCD self-management. Keep commented until the cluster is
-          # healthy and you have read core-components/argocd/README.md
-          # (migration steps, version pinning, recovery path).
-          # - name: argocd
-          #   chart: argo-cd
-          #   repoURL: https://argoproj.github.io/argo-helm
-          #   version: "<chart version shipping the live v3.0.6 — see README>"
-          #   releaseName: argocd
+          # ArgoCD self-management (adopted from the manual v3.0.6 install,
+          # 2026-06-11). Chart 8.1.2 ships exactly v3.0.6 — upgrade one minor
+          # at a time; see core-components/argocd/README.md for the version
+          # ladder and recovery path.
+          - name: argocd
+            chart: argo-cd
+            repoURL: https://argoproj.github.io/argo-helm
+            version: "8.1.2"
+            releaseName: argocd
   template:
     metadata:
       # e.g. name="cert-manager-chart"

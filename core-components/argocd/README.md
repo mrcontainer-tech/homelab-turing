@@ -1,53 +1,65 @@
 # ArgoCD
 
-GitOps controller. **Currently installed manually** (raw upstream manifests +
-`--insecure` flag, live version v3.0.6); only the cert, ingresses, and
-ServiceMonitor in `manifests/` are GitOps-managed. This is the long-standing
-TODO from the project docs.
+GitOps controller, **self-managed via the argo-helm chart** (entry in
+`appsets/core-components-chart-application-set.yaml`, values in this
+directory). Adopted in place from the original manual `install.yaml` install
+(v3.0.6, `--insecure` flag) on 2026-06-11 — chart 8.1.2 ships exactly v3.0.6,
+so the adoption was a pure ownership change. The cert, ingresses, and
+ServiceMonitor live in `manifests/` (separate `argocd-manifest` app).
 
-## Planned migration to Helm (self-management)
+## Upgrading
 
-The groundwork is in place but **deliberately not enabled**:
+Bump `version:` in the appset entry — **one minor at a time** (ArgoCD does
+not support skipping minors). Before each step, read the upstream upgrade
+notes (`docs/operator-manual/upgrading/`) and wait for the previous rollout
+to be fully healthy.
 
-- `values.yaml` in this directory replicates the current config
-  (`server.insecure: true`, single replicas, domain).
-- A commented-out chart entry exists in
-  `appsets/core-components-chart-application-set.yaml`.
+Ladder from v3.0.6 to v3.4.3 (chart→app, verified against the argo-helm
+index on 2026-06-11):
 
-### Why not enabled yet
+| Chart  | Ships  | Notes                                            |
+|--------|--------|--------------------------------------------------|
+| 8.1.2  | v3.0.6 | Adoption baseline                                |
+| 9.0.6  | v3.1.9 | Chart 8→9 boundary is benign (cmd-params only)   |
+| 9.3.7  | v3.2.6 |                                                  |
+| 9.5.11 | v3.3.9 |                                                  |
+| 9.5.20 | v3.4.3 | Latest as of 2026-06-11                          |
 
-Migrating ArgoCD to manage itself is the one change that can brick the GitOps
-loop if it goes wrong. Do **not** enable it until:
+Expect the `argocd-chart` app to briefly show Unknown/Progressing while
+ArgoCD's own server/controller restart mid-sync — it converges on its own.
 
-1. The cluster is fully healthy (in particular: cluster DNS working, all apps
-   syncing — see `analysis-report.html` from 2026-06-10).
-2. You have a recovery path ready (below).
+## Adoption notes (what was checked, 2026-06-11)
 
-### Migration steps
+- Release name `argocd` renders the same resource names as the manual
+  install (`argocd-server`, `argocd-repo-server`, StatefulSet
+  `argocd-application-controller`, …); `ServerSideApply=true` adopts them
+  in place.
+- `configs.secret.createSecret: false` — the chart must never manage
+  `argocd-secret` (live one holds `admin.password`, `server.secretkey`,
+  TLS material; the chart would render it empty).
+- `server.insecure: true` moved to `argocd-cmd-params-cm` via
+  `configs.params`, replacing the container `--insecure` flag. TLS still
+  terminates at the ingress (cert-manager).
+- One-time image rollouts on adoption: dex v2.41.1→v2.43.1, redis
+  7.2.7→7.2.8 (ecr-public mirror).
+- The `argocd-redis` auth secret already existed; the chart's
+  `argocd-redis-secret-init` Job only creates it if absent.
+- Pre-adoption backup: `~/argocd-backup-2026-06-11.yaml` (full namespace
+  dump, kept outside the repo).
 
-1. Back up the current install state:
-   `kubectl get all,cm,secret,ingress -n argocd -o yaml > argocd-backup.yaml`
-2. Verify the chart version: pick the argo-helm `argo-cd` chart release that
-   ships your current app version (v3.0.6 → chart 8.1.x) so the migration is a
-   pure ownership change, not a version jump. Upgrade afterwards, separately.
-3. Uncomment the entry in `appsets/core-components-chart-application-set.yaml`
-   and set the verified version.
-4. Commit and push. The release name `argocd` produces the same resource names
-   as the manual install (`argocd-server`, `argocd-repo-server`, …), and
-   `ServerSideApply=true` lets ArgoCD adopt the existing objects in place.
-5. Watch `argocd-chart` sync. Expect a one-time rollout of all components.
-6. Verify: `argocd app list`, UI reachable, and that `server.insecure` took
-   effect via `configs.params` (the old container `--insecure` flag becomes
-   redundant).
+## Recovery
 
-### Recovery
-
-If ArgoCD breaks mid-migration, reinstall the known-good upstream manifests by
-hand and remove the chart entry from the ApplicationSet:
+If ArgoCD breaks badly enough that it cannot sync itself, reinstall the
+last-good upstream manifests by hand and re-comment the chart entry in the
+ApplicationSet:
 
 ```bash
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v3.0.6/manifests/install.yaml
 ```
+
+(Replace the version with the last one that was healthy. GitOps-level
+rollback — re-pinning the previous chart version in the appset — is
+preferred whenever ArgoCD can still sync.)
 
 ## Note on namespace conventions
 

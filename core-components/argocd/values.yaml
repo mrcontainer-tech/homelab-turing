@@ -1,6 +1,6 @@
 # Helm values for the argo-cd chart (https://argoproj.github.io/argo-helm).
-# NOT ACTIVE YET — the chart entry in appsets/core-components-chart-application-set.yaml
-# is commented out. Read README.md in this directory before enabling.
+# Adopted from the manual v3.0.6 install on 2026-06-11 — see README.md for
+# the migration record and recovery path.
 global:
   domain: argocd.mrcontainer.nl
 
@@ -9,6 +9,11 @@ configs:
     # TLS terminates at the ingress (cert-manager); the server stays HTTP.
     # This replaces the --insecure flag of the manual install.
     server.insecure: true
+  secret:
+    # Never let the chart touch argocd-secret: the live one (from the manual
+    # install) holds admin.password, server.secretkey, and TLS material; the
+    # chart would render it empty. It stays unmanaged.
+    createSecret: false
 
 # Single-replica everything (matches the current install; HA needs >3 nodes
 # of headroom this cluster doesn't have).
