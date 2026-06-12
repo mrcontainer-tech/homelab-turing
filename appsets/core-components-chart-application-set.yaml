@@ -51,11 +51,11 @@ spec:
           # ArgoCD self-management (adopted from the manual v3.0.6 install,
           # 2026-06-11). Upgrade ONE minor at a time — see the version ladder
           # and recovery path in core-components/argocd/README.md.
-          # 9.3.7 ships v3.2.6.
+          # 9.5.11 ships v3.3.9.
           - name: argocd
             chart: argo-cd
             repoURL: https://argoproj.github.io/argo-helm
-            version: "9.3.7"
+            version: "9.5.11"
             releaseName: argocd
   template:
     metadata:
