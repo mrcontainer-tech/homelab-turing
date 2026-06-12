@@ -4,9 +4,11 @@ metadata:
   name: pg-cluster
   namespace: miniflux
 spec:
-  # Two instances: survive a node/volume failure with automatic failover.
+  # Single instance: chosen for memory headroom on the 8GB nodes (2026-06-12,
+  # after the node1 exhaustion incident). No automatic failover — recovery
+  # relies on the nightly barman backups + WAL archive.
   # CNPG handles streaming replication; ~256Mi extra memory per cluster.
-  instances: 2
+  instances: 1
   storage:
     storageClass: longhorn
     size: 2Gi
