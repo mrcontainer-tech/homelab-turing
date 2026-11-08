@@ -9,8 +9,6 @@ spec:
     repoURL: https://github.com/mrcontainer-tech/homelab-turing.git
     targetRevision: main
     path: appsets
-    directory:
-      recurse: false
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
