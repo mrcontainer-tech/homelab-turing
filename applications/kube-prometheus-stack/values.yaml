@@ -55,3 +55,28 @@ grafana:
       label: grafana_dashboard
       labelValue: "1"
       folderAnnotation: grafana_folder
+
+# Default is emptyDir on an SD card: history lost on every restart. Pin to
+# node4 (SSD) with a Longhorn PVC and bounded retention.
+prometheus:
+  prometheusSpec:
+    nodeSelector:
+      kubernetes.io/hostname: node4
+    retention: 7d
+    retentionSize: 15GiB
+    walCompression: true
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1536Mi
+      limits:
+        memory: 3Gi
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 20Gi
