@@ -3,7 +3,9 @@ kind: Namespace
 metadata:
   name: tailscale
   labels:
-    pod-security.kubernetes.io/enforce: baseline
+    # Connector (subnet router) pods need privileged for sysctls/NET_ADMIN.
+    # Ingress proxy pods would pass baseline; keep warn at restricted.
+    pod-security.kubernetes.io/enforce: privileged
     pod-security.kubernetes.io/warn: restricted
   annotations:
     # Don't prune the namespace

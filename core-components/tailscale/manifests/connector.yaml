@@ -8,4 +8,5 @@ spec:
     - "tag:k8s-subnet"
   subnetRouter:
     advertiseRoutes:
-      - "192.168.68.64/28"
+      # Whole LAN: router .1, nodes .101-.104, MetalLB .64/28
+      - "192.168.68.0/24"

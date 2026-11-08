@@ -129,7 +129,7 @@ Deploy both: a Connector for subnet routing the MetalLB range (full access when 
 **Option D: Hybrid Approach**
 
 1. **Tailscale Kubernetes Operator** deployed via Helm chart as a core component, managed by ArgoCD
-2. **Connector subnet router** advertising `192.168.68.64/28` (covers MetalLB pool 70-80) for full network access from trusted devices
+2. **Connector subnet router** advertising `192.168.68.0/24` (router, nodes, MetalLB pool) for full LAN access from trusted devices
 3. **Tailscale Ingress** for high-priority daily services: homepage, Jellyfin, Jellyseerr, Grafana — these get MagicDNS names with auto-TLS
 4. **Traefik remains** as the LAN ingress controller — zero changes to existing Ingress resources, cert-manager Certificates, or external-dns records
 5. **ACL policy** in Tailscale to control which devices can access which services
@@ -182,14 +182,14 @@ The Tailscale policy file (managed in the Tailscale admin console) should define
   },
   "autoApprovers": {
     "routes": {
-      "192.168.68.64/28": ["tag:k8s-subnet"]
+      "192.168.68.0/24": ["tag:k8s-subnet"]
     }
   },
   "acls": [
     // Personal devices can access media and homepage services
     {"action": "accept", "src": ["autogroup:member"], "dst": ["tag:k8s-media:*"]},
-    // Personal devices can access all services via subnet router
-    {"action": "accept", "src": ["autogroup:member"], "dst": ["tag:k8s-subnet:*"]},
+    // Personal devices can access the LAN via subnet router (matched on destination IP)
+    {"action": "accept", "src": ["autogroup:member"], "dst": ["192.168.68.0/24:*"]},
     // Admin access to cluster management services
     {"action": "accept", "src": ["autogroup:owner"],  "dst": ["tag:k8s-admin:*"]}
   ]
@@ -212,7 +212,7 @@ This allows tagging Tailscale Ingress resources with purpose-specific tags (e.g.
 
 ### Phase 2: Subnet Router
 
-1. Deploy Connector manifest advertising `192.168.68.64/28` (covers MetalLB pool)
+1. Deploy Connector manifest advertising `192.168.68.0/24` (router, nodes, MetalLB pool). Namespace must enforce PSS `privileged`
 2. Auto-approve route via ACL policy
 3. Test: install Tailscale on phone, verify access to `https://homepage.mrcontainer.nl` via subnet route
 
@@ -266,57 +266,41 @@ Commit to Git → ArgoCD syncs → service appears on MagicDNS with auto-TLS.
 
 ## Kubernetes API Access (kubectl over Tailscale)
 
-The Tailscale operator exposes the Kubernetes API server on the tailnet via its built-in **API Server Proxy**. Enabled through `apiServerProxyConfig.mode: "noauth"` in `core-components/tailscale/values.yaml`, the operator pod registers on the tailnet as `tailscale-operator` and reverse-proxies API requests into the cluster.
+The operator's built-in **API Server Proxy** exposes the Kubernetes API on the tailnet as `tailscale-operator`. Enabled via `apiServerProxyConfig.mode: "true"` in `core-components/tailscale/values.yaml`.
 
-### Mode: noauth
+### Mode: auth
 
-`noauth` means the proxy is a network shim only — it forwards requests without impersonating users. Clients authenticate to the Kubernetes API with their own kubeconfig credentials (for this homelab: the k3s admin cert from `/etc/rancher/k3s/k3s.yaml`). Tailscale provides the encrypted network path and its own server certificate for the proxy endpoint.
+The proxy authenticates callers by Tailscale identity, drops any client credentials, and forwards requests with Kubernetes impersonation headers. The impersonated user/groups come from a `tailscale.com/cap/kubernetes` grant; RBAC applies as normal.
 
-This was chosen over `auth` mode (where the operator maps Tailscale identity to Kubernetes RBAC via grants) because:
+- No cluster credentials on laptops; access is revoked in the Tailscale admin console
+- Requests are attributable to a tailnet login (`kubectl auth whoami`)
 
-- Single-user homelab — no multi-user RBAC requirement
-- Cluster-admin kubeconfig is already available on the admin's laptops
-- `auth` adds Tailscale grants + RBAC bindings overhead with no tangible benefit at this scale
-- Upgrade path is trivial: flip the value to `"auth"` and add grants when the need arises
+Originally planned as `noauth` (client presents its own k3s admin cert); switched in `fix(tailscale): ServerProxyConfig` to avoid copying the cluster-admin cert to every device.
 
-### ACL rule
-
-The ACL samples earlier in this ADR do not grant access to the operator device. Add:
+### Tailnet policy
 
 ```jsonc
-// allow admin devices to reach the API server proxy
-{"action": "accept", "src": ["autogroup:owner"], "dst": ["tag:k8s-operator:*"]}
+"acls": [
+  {"action": "accept", "src": ["autogroup:owner"], "dst": ["tag:k8s-operator:*"]}
+],
+"grants": [{
+  "src": ["autogroup:owner"],
+  "dst": ["tag:k8s-operator"],
+  "app": {"tailscale.com/cap/kubernetes": [{"impersonate": {"groups": ["system:masters"]}}]}
+}]
 ```
 
-### Client setup (MacBook / Linux desktop)
+`manifests/crd.yaml` also binds group `tailnet-admins` to `cluster-admin`; prefer that group over `system:masters` if scoped-down groups are ever added.
 
-1. Install Tailscale and join the tailnet:
+### Client setup
 
-   ```bash
-   # macOS
-   brew install --cask tailscale
-   # Linux
-   curl -fsSL https://tailscale.com/install.sh | sh
+```bash
+tailscale configure kubeconfig tailscale-operator
+kubectl auth whoami
+kubectl get nodes
+```
 
-   sudo tailscale up
-   tailscale status | grep tailscale-operator
-   ```
-
-2. Seed `~/.kube/config` with the k3s admin credentials (copy from `/etc/rancher/k3s/k3s.yaml` on a cluster node).
-
-3. Rewrite the server URL to use the Tailscale API proxy:
-
-   ```bash
-   tailscale configure kubeconfig tailscale-operator
-   ```
-
-   This swaps `cluster.server` to `https://tailscale-operator` and installs the Tailscale-issued CA. The client cert/key from the k3s kubeconfig remains the auth material.
-
-4. Test off the home network (cellular / hotspot) to confirm the path runs over Tailscale, not the LAN:
-
-   ```bash
-   kubectl get nodes
-   ```
+Use the MagicDNS name, not the `100.x` IP — the proxy's Let's Encrypt cert is issued for `tailscale-operator.<tailnet>.ts.net`. The kubeconfig token is a placeholder; the proxy ignores it.
 
 ---
 

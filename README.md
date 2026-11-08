@@ -134,7 +134,7 @@ component-name/
                         │                                             │
                         │  ┌─────────────────────────────────────┐    │
                         │  │         Tailscale Operator          │    │
-                        │  │  Subnet router: 192.168.68.64/28    │    │
+                        │  │  Subnet router: 192.168.68.0/24     │    │
                         │  │  + Tailscale Ingress per service    │    │
                         │  └─────────────────────────────────────┘    │
                         │                                             │
