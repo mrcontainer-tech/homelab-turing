@@ -9,6 +9,9 @@ spec:
   # relies on the nightly barman backups + WAL archive.
   # CNPG handles streaming replication; ~256Mi extra memory per cluster.
   instances: 1
+  # Must be the zot path: Kyverno rewrites the Pod image to zot, and CNPG restarts
+  # any Pod whose image differs from imageName. Unset = endless restart loop.
+  imageName: zot.mrcontainer.nl/ghcr/cloudnative-pg/postgresql:18.3-system-trixie
   storage:
     storageClass: longhorn
     size: 2Gi
