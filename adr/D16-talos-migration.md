@@ -188,7 +188,7 @@ The loss of SSH access is an acceptable trade-off given talosctl's diagnostic ca
    - Install Traefik via Helm (no longer bundled with k3s)
    - Validate all ApplicationSets and workloads
    - Update cluster documentation (TURING-INSTALL.md, README.md)
-   - Update CLAUDE.md with Talos-specific commands
+   - Update AGENTS.md with Talos-specific commands
 
 5. **New hardware**:
    - Add Jetson Orin NX with Talos Jetson image

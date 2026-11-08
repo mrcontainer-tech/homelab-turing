@@ -193,6 +193,6 @@ kubectl get appset -n argocd
 | Doc | What's in it |
 |-----|-------------|
 | `VISION.md` | Why this project exists and where it's going |
-| `CLAUDE.md` | Conventions for working with AI assistants |
+| `AGENTS.md` | Conventions for working with AI assistants |
 | `TURING-INSTALL.md` | Initial cluster setup from scratch |
 | `adr/` | All architecture decisions with context and trade-offs |

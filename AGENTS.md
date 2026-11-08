@@ -1,4 +1,4 @@
-# CLAUDE.md - AI Assistant Guide
+# AGENTS.md - AI Assistant Guide
 
 This document helps AI assistants (like Claude) understand how to work effectively with this homelab-turing project. To enhance my dev workflow with AI tools I created this document.
 
@@ -176,7 +176,7 @@ kubectl apply --dry-run=client -f core-components/<component>/manifests/
 | **external-secrets** | Secrets management | Syncs from AWS Secrets Manager |
 | **CoreDNS** | DNS | Custom config to avoid Tailscale DNS |
 | **dnscrypt-proxy** | Encrypted DNS | Multi-provider DoH/DNSCrypt |
-| **Tailscale** | Remote access | Operator with ingress class for Tailscale-only services |
+| **Tailscale** | Remote access | Operator with ingress class for Tailscale-only services; API server proxy for kubectl |
 | **CloudNativePG** | PostgreSQL operator | Manages PostgreSQL clusters for applications |
 | **Tekton Operator** | CI/CD operator | Installs Tekton Pipelines and Dashboard |
 
@@ -246,6 +246,8 @@ This ensures the user maintains full control over what enters the Git history.
 **NEVER use `kubectl apply`, `kubectl delete`, `kubectl patch`, `kubectl edit`, or any command that modifies cluster state.** All cluster changes must go through GitOps (commit to Git → ArgoCD syncs).
 
 **Do NOT run `kubectl apply` even with `--dry-run=client` or `--dry-run=server`.** This is a fully GitOps-managed repository — validation belongs in the PR/ArgoCD layer, not via direct kubectl invocations against the cluster. For local YAML validation, prefer `helm template`, `kubeval`, `kubeconform`, or `yamllint`.
+
+**kubectl connects via the Tailscale API server proxy** (`tailscale-operator.<tailnet>.ts.net`, auth mode — Tailscale identity, no cluster credentials). If kubectl prompts for a username, run `tailscale configure kubeconfig tailscale-operator`.
 
 ---
 
