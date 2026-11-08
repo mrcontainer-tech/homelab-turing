@@ -5,6 +5,10 @@ metadata:
   namespace: media
   labels:
     app: jellyfin
+  annotations:
+    # TEMPORARY: SSA cannot drop the stale rollingUpdate block left from before
+    # Recreate. Remove after the next successful sync.
+    argocd.argoproj.io/sync-options: Replace=true
 spec:
   replicas: 1
   # Pinned to node4 with a single replica: a RollingUpdate surge pod can

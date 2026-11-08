@@ -37,6 +37,8 @@ spec:
             deny:
               conditions:
                 all:
-                  - key: "{{ element.resources.limits.memory || '' }}"
+                  # length() avoids Kyverno parsing "256Mi" as a quantity and
+                  # logging a type-mismatch error on every admission.
+                  - key: "{{ length(element.resources.limits.memory || '') }}"
                     operator: Equals
-                    value: ""
+                    value: 0

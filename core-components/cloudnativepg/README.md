@@ -33,6 +33,8 @@ metadata:
   namespace: <app-namespace>
 spec:
   instances: 1
+  # REQUIRED on this cluster — see "Image name and Kyverno" below.
+  imageName: zot.mrcontainer.nl/ghcr/cloudnative-pg/postgresql:18.3-system-trixie
   storage:
     storageClass: longhorn
     size: 2Gi
@@ -49,6 +51,18 @@ spec:
 ```
 
 The operator creates a secret `<cluster-name>-app` with keys `dbname`, `host`, `port`, `username`, `password`, `uri`, `jdbc-uri`.
+
+## Image name and Kyverno
+
+`spec.imageName` must be set to the `zot.mrcontainer.nl/...` path.
+
+Kyverno rewrites Pod images to zot; CNPG restarts any Pod whose image differs
+from `imageName`. Unset (ghcr.io default) means an endless restart loop.
+
+Symptom: cluster phase `Primary instance is being restarted without a
+switchover`, phaseReason `using a different image: zot... -> ghcr.io/...`.
+
+Cost: PostgreSQL upgrades are a manual tag bump in each `pg-cluster.yaml`.
 
 ## Related ADRs
 

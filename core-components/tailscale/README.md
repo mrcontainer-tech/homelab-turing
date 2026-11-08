@@ -6,7 +6,7 @@ Tailscale Kubernetes operator providing secure remote access to homelab services
 
 Hybrid approach with two exposure mechanisms:
 
-1. **Subnet Router** (Connector CRD) — advertises the MetalLB IP range (`192.168.68.64/28`), giving Tailscale devices full access to all `*.mrcontainer.nl` services
+1. **Subnet Router** (Connector CRD) — advertises the LAN (`192.168.68.0/24`): router `.1`, nodes `.101-.104` and the MetalLB pool, so Tailscale devices reach all `*.mrcontainer.nl` services and the router UI
 2. **Tailscale Ingress** — exposes priority services with MagicDNS names (`*.tailnet-name.ts.net`) and auto-provisioned TLS
 
 Traefik remains the LAN ingress controller — both coexist.
@@ -18,13 +18,21 @@ Traefik remains the LAN ingress controller — both coexist.
 | Helm chart (`tailscale-operator`) | Deploys the operator and CRDs |
 | `manifests/namespace.yaml` | Tailscale namespace |
 | `manifests/external-secret.yaml` | Syncs OAuth credentials from AWS Secrets Manager |
-| `manifests/connector.yaml` | Subnet router for MetalLB IP range |
+| `manifests/connector.yaml` | Subnet router for the LAN (`192.168.68.0/24`) |
+| `manifests/crd.yaml` | ClusterRoleBinding: `tailnet-admins` group → `cluster-admin` |
 
 ## Prerequisites
 
 1. **Tailscale account** with an OAuth client created in the admin console
 2. **OAuth credentials** stored in AWS Secrets Manager at `homelab/tailscale-operator` with keys `client_id` and `client_secret`
-3. **ACL policy** configured in Tailscale admin console with tags (`tag:k8s-operator`, `tag:k8s`, `tag:k8s-subnet`, `tag:k8s-media`) and auto-approver for the subnet route
+3. **ACL policy** configured in Tailscale admin console with tags (`tag:k8s-operator`, `tag:k8s`, `tag:k8s-subnet`, `tag:k8s-media`) and auto-approver for `192.168.68.0/24` on `tag:k8s-subnet`
+4. **ACL destination rule** for the LAN, e.g. `dst: ["192.168.68.0/24:*"]`. Subnet traffic is matched on the destination IP, not on the router's tag
+5. **Client side**: `tailscale set --accept-routes` on each device that should use the subnet route
+
+## Pod Security
+
+The namespace enforces `privileged`. The Connector pod runs `privileged: true` (sysctls, NET_ADMIN) and is rejected under `baseline`; the operator then retries forever while the Connector still reports Ready.
+`warn: restricted` stays on so drift in the Ingress proxy pods is still visible.
 
 ## Tailscale Ingress Services
 
@@ -39,14 +47,14 @@ Priority services exposed via MagicDNS:
 
 ## kubectl Access via API Server Proxy
 
-The operator also exposes the Kubernetes API server on the tailnet (`apiServerProxyConfig.mode: "noauth"` in `values.yaml`). From a Tailscale-connected MacBook or Linux desktop:
+The operator exposes the Kubernetes API on the tailnet as `tailscale-operator.<tailnet>.ts.net` in **auth mode** (`apiServerProxyConfig.mode: "true"`). Callers are authenticated by Tailscale identity and impersonated via a tailnet grant — no cluster credentials needed on the client.
 
-1. `tailscale up` and confirm the `tailscale-operator` device resolves.
-2. Copy the k3s admin kubeconfig from `/etc/rancher/k3s/k3s.yaml` into `~/.kube/config`.
-3. Run `tailscale configure kubeconfig tailscale-operator` — this swaps the server URL to `https://tailscale-operator` and installs the proxy CA.
-4. `kubectl get nodes` should now work from any network.
+```bash
+tailscale configure kubeconfig tailscale-operator
+kubectl auth whoami   # shows your tailnet login
+```
 
-The Tailscale ACL must allow the admin device to reach `tag:k8s-operator`. See [D22 § Kubernetes API Access](../../adr/D22-tailscale-remote-access.md#kubernetes-api-access-kubectl-over-tailscale) for the rule and full rationale.
+Requires an ACL rule to `tag:k8s-operator` and a `tailscale.com/cap/kubernetes` grant (see [D22](../../adr/D22-tailscale-remote-access.md#kubernetes-api-access-kubectl-over-tailscale)). Use the MagicDNS name, not the IP — the TLS cert is issued for the `.ts.net` hostname.
 
 ## Adding a New Service
 

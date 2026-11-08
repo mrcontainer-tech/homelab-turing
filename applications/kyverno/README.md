@@ -44,6 +44,14 @@ spec:
               app: "?*"
 ```
 
+## Gotcha: operators that reconcile their own Pod image
+
+`mutate-image-registry` rewrites Pods only. An operator that compares the live
+Pod image with its CR spec (CNPG does) will restart the Pod forever.
+
+Such CRs must carry the zot path themselves, e.g. CNPG `spec.imageName`.
+See `core-components/cloudnativepg/README.md`.
+
 ## Related
 
 - [Policy Reporter](../policy-reporter/) - UI for viewing policy reports
